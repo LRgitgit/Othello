@@ -8,7 +8,7 @@ Created on Wed Nov  2 17:02:16 2022
 import numpy as np
 from tkinter import * 
 from tkinter import ttk
-from math import *
+from math import floor
 
 
 class Game() : 
@@ -43,7 +43,7 @@ class Game() :
         for i in range(self.nb_cases) :
             self.grille.create_line((self.GUI_size/self.nb_cases)*(i+1) , 0 , (self.GUI_size/self.nb_cases)*(i+1) , self.GUI_size , fill = 'white', width = 2)
             self.grille.create_line(0 , (self.GUI_size/self.nb_cases)*(i+1) , self.GUI_size , (self.GUI_size/self.nb_cases)*(i+1) , fill = 'white', width = 2)
-        
+            
         #Haut gauche 
         self.grille.create_oval(((self.nb_cases/2)-1)*self.GUI_size/self.nb_cases + self.GUI_size/60, ((self.nb_cases/2)-1)*self.GUI_size/self.nb_cases + self.GUI_size/60 , (self.nb_cases/2)*self.GUI_size/self.nb_cases - self.GUI_size/60, (self.nb_cases/2)*self.GUI_size/self.nb_cases - self.GUI_size/60, outline = 'white', fill = "white", width = 2)
         self.white_pawns.append(((int((self.nb_cases/2)-1)),int((self.nb_cases/2)-1)))
@@ -96,6 +96,7 @@ class Game() :
            
 
         self.grille.bind('<Button-1>' , gestion_clic)
+
         root.mainloop()
         
     def init_Board(self) : 
@@ -205,7 +206,7 @@ class Game() :
             while case_x + step*delta_x >= 0 and case_x + step*delta_x <= self.nb_cases -1 and case_y + step*delta_y >= 0 and case_y + step*delta_y <= self.nb_cases -1 :
                 coordinates_to_check = (case_x + step*delta_x, case_y + step*delta_y)
                 #print("coord_to_check ", coordinates_to_check)
-                if self.joueur == 1 : #Joueur Blanc
+                if self.joueur : #Joueur Blanc
                     if  coordinates_to_check in self.white_pawns :
                         #Si le pion d'après est blanc : critère d'arret (ou break/continue) et ajout à pawn to flip du premier pion
                         x_pawn_to_add = coordinates_to_check[0] - delta_x
@@ -231,6 +232,7 @@ class Game() :
                         continue
                 
                     #Si on arrive ici la case est focément vide 
+                    print("Hors-cadre : ", coordinates_to_check)
                     legal = False
                     break
                     
@@ -245,7 +247,6 @@ class Game() :
                             local_pawns_to_flip.append((x_pawn_to_add,y_pawn_to_add))
                         
                         #On arrête la boucle while
-                        #print("239", local_pawns_to_flip)
                         break
                     
                     if  coordinates_to_check in self.white_pawns :
@@ -261,28 +262,32 @@ class Game() :
                         continue
                 
                     #Si on arrive ici la case est focément vide 
+                    print("Hors-cadre : ", coordinates_to_check)
                     legal = False
                     break
             #Le cas d'une suite de pions d'une même couleur jusqu'à la sortie du cadre ne permet pas de passer legal à False puisqu'on sort du while sans être passé dessus
-            print("Pawn to check : ", pawn_to_check, " Free case : ", free_case, " local_pawns_to_flip", local_pawns_to_flip)
+            #print("Pawn to check : ", pawn_to_check, " Free case : ", free_case, " local_pawns_to_flip", local_pawns_to_flip)
             #Cette condition permet de ne pas avoir à checker à la checker à chaque tour du while et determine si on est sorti parce que pion blanc ou parce que hors cadre
-            if not case_x + step*delta_x >= 0 and case_x + step*delta_x <= self.nb_cases -1 and case_y + step*delta_y >= 0 and case_y + step*delta_y <= self.nb_cases -1 :
+            #if  case_x + step*delta_x < 0 and case_x + step*delta_x > self.nb_cases - 1 and case_y + step*delta_y < 0 and case_y + step*delta_y > self.nb_cases -1 :
+            if  case_x  < 0 or case_x  > self.nb_cases - 1 or case_y  < 0 or case_y  > self.nb_cases -1 :
                 legal = False
-                #print("243")
+                print("Legal = False  Free_Case : ", free_case)
             #Sorti du while avec legal toujours True <=> Pas de case vide rencontrées 
             
             if legal :
+                print("Legal = True  Free_Case : ", free_case)
                 #print("246")
                 #On ne veut la position qu'une fois dans cette liste
                 if free_case not in self.legal_moves :
                     self.legal_moves.append(free_case)
                 #On ajoute au dictionnaire des consequences les pions à retourner si cette position est choisie
                 if free_case in list(self.pawns_to_flip.keys()) :
-                    self.pawns_to_flip[free_case].append(local_pawns_to_flip)
+                    for local_pawn in local_pawns_to_flip :
+                        self.pawns_to_flip[free_case].append(local_pawn)
                 else : 
                     self.pawns_to_flip.update({free_case : local_pawns_to_flip})
                 #Suivre ce vecteur et l'allonger jusqu'à rencontrer une case blanche/noire/vide/hors cadre
-            print("self.pawns_to_flip", self.pawns_to_flip, "\n")
+                print("self.pawns_to_flip", self.pawns_to_flip, "\n")
             
     def remove_legal_moves_GUI(self, x, y) :
         #On enleve le move joué de la liste des coup jouables
@@ -310,6 +315,9 @@ class Game() :
         else : 
             self.black_pawns.append((x,y))
             for pawn in self.pawns_to_flip[(x,y)] :
+                print("Pawn : ", pawn)
+                print("self.black_pawns : ", self.black_pawns)
+                print("self.white_pawns : ", self.white_pawns)
                 self.white_pawns.pop(self.white_pawns.index((pawn[0],pawn[1])))
                 self.black_pawns.append((pawn[0],pawn[1]))
                 self.grille.create_oval(pawn[0]*self.GUI_size/self.nb_cases + self.GUI_size/60, pawn[1]*self.GUI_size/self.nb_cases + self.GUI_size/60 , (pawn[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, (pawn[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, outline = 'black', fill = "black", width = 2)
