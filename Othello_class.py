@@ -269,7 +269,7 @@ class Game() :
             #print("Pawn to check : ", pawn_to_check, " Free case : ", free_case, " local_pawns_to_flip", local_pawns_to_flip)
             #Cette condition permet de ne pas avoir à checker à la checker à chaque tour du while et determine si on est sorti parce que pion blanc ou parce que hors cadre
             #if  case_x + step*delta_x < 0 and case_x + step*delta_x > self.nb_cases - 1 and case_y + step*delta_y < 0 and case_y + step*delta_y > self.nb_cases -1 :
-            if  case_x  < 0 or case_x  > self.nb_cases - 1 or case_y  < 0 or case_y  > self.nb_cases -1 :
+            if  case_x + step*delta_x  < 0 or case_x + step*delta_x > self.nb_cases - 1 or case_y + step*delta_y < 0 or case_y + step*delta_x > self.nb_cases -1 :
                 legal = False
                 print("Legal = False  Free_Case : ", free_case)
             #Sorti du while avec legal toujours True <=> Pas de case vide rencontrées 
