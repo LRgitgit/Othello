@@ -12,10 +12,11 @@ from math import floor
 
 
 class Game() : 
-    def __init__(self, gametype = "H-H", nb_cases = 8, GUI = True, GUI_size = 800) : 
+    def __init__(self, gametype = "H-H", nb_cases = 8, GUI = True, GUI_size = 800, exploration_depth = 5) : 
         #Gametype = "H-H", "H-IA", "IA-IA"
         self.nb_cases = nb_cases
         self.GUI_size= GUI_size
+        self.GUI = GUI
         
         self.joueur = False
         
@@ -24,9 +25,11 @@ class Game() :
         self.white_pawns = []
         self.black_pawns = []
         
+        self.exploration_depth = exploration_depth
+        
         self.is_over = False
         
-        if GUI : 
+        if self.GUI : 
             self.init_GUI()
             
         
@@ -58,6 +61,7 @@ class Game() :
         self.white_pawns.append((int((self.nb_cases/2)),int((self.nb_cases/2))))
         
         self.compute_legal_moves()
+        self.Compute_tree()
         
         #Gestion du click souris pour creer les pièces
         def gestion_clic(evt) :
@@ -94,8 +98,9 @@ class Game() :
         
                 
            
-
+            self.Compute_tree()
         self.grille.bind('<Button-1>' , gestion_clic)
+        
 
         root.mainloop()
         
@@ -108,7 +113,7 @@ class Game() :
         #Réinitialise le dictionnaire moves/conséquences
         self.pawns_to_flip = {}
         
-        print("Joueur : ", self.joueur)
+        #print("Joueur : ", self.joueur)
         if self.joueur : #Blanc
             #Check pour tous les pions noirs si une case adjacente permet une prise
             for pawn in self.black_pawns : 
@@ -126,12 +131,15 @@ class Game() :
                 #On veut que check legal move nous dise : si je pose un pion noir sur un case libre, est-ce que ça fait une prise et si oui quelles conséquences ?
                 self.check_legal_move(pawn, legal_neighbours)
 
-        #print("legal_moves : ", self.legal_moves)
-        #print("pawns_to_flip : ", self.pawns_to_flip)
         #Affichage en vert des legal_moves
-        for move in self.legal_moves :
-            self.grille.create_oval(move[0]*self.GUI_size/self.nb_cases + self.GUI_size/60, move[1]*self.GUI_size/self.nb_cases + self.GUI_size/60 , (move[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, (move[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, outline = 'yellow', fill = "yellow", width = 2)
-            
+        if self.GUI : 
+            for move in self.legal_moves :
+                self.grille.create_oval(move[0]*self.GUI_size/self.nb_cases + self.GUI_size/60, move[1]*self.GUI_size/self.nb_cases + self.GUI_size/60 , (move[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, (move[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, outline = 'yellow', fill = "yellow", width = 2)
+                # if self.joueur : 
+                #     self.grille.create_oval(move[0]*self.GUI_size/self.nb_cases + self.GUI_size/3, move[1]*self.GUI_size/self.nb_cases + self.GUI_size/3 , (move[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/3, (move[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/3, outline = 'white', fill = "white", width = 2)
+                # else : 
+                #     self.grille.create_oval(move[0]*self.GUI_size/self.nb_cases + self.GUI_size/3, move[1]*self.GUI_size/self.nb_cases + self.GUI_size/3 , (move[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/3, (move[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/3, outline = 'black', fill = "black", width = 2)
+    
     def check_legal_neighbours(self, pawn) : 
         
         #Donne la liste des 8 cases autour du pion opposé considéré
@@ -144,18 +152,8 @@ class Game() :
                 #On check pour les cases libres autour du pion opposé considéré si elles permettent la prise de ce pion
                 legal_neighbours.append(neighbour_case)
         
-        print("pawn :" ,pawn ," neighbours_list : ", pawn_neighbours, "legal_neighbours : ", legal_neighbours)
+        #print("pawn :" ,pawn ," neighbours_list : ", pawn_neighbours, "legal_neighbours : ", legal_neighbours)
         return legal_neighbours
-    
-        # if not(len(self.legal_moves)) : 
-        #     if self.joueur : 
-        #         self.white_is_over = True
-        #         self.joueur = not(self.joueur)
-        #         self.compute_legal_moves()
-        #     else : 
-        #         self.black_is_over = True
-        #         self.joueur = not(self.joueur)
-        #         self.compute_legal_moves()
                     
     
     def compute_pawn_neighbours(self, pawn) :
@@ -183,7 +181,7 @@ class Game() :
             #Liste des pions blancs adjacents à la case à check
             pawns_to_check = [pawn for pawn in self.white_pawns if pawn in legal_neighbours]
         
-        print("legal_neighbours to check : ", legal_neighbours)
+        #print("legal_neighbours to check : ", legal_neighbours)
         #print("Pion : ", case, " pawns_to_check : ", pawns_to_check)
         for free_case in legal_neighbours : 
             #déterminer le sens du vecteur entre la case à tester et le pion opposé considéré
@@ -232,7 +230,7 @@ class Game() :
                         continue
                 
                     #Si on arrive ici la case est focément vide 
-                    print("Hors-cadre : ", coordinates_to_check)
+                    #print("Hors-cadre : ", coordinates_to_check)
                     legal = False
                     break
                     
@@ -262,7 +260,7 @@ class Game() :
                         continue
                 
                     #Si on arrive ici la case est focément vide 
-                    print("Hors-cadre : ", coordinates_to_check)
+                    #print("Hors-cadre : ", coordinates_to_check)
                     legal = False
                     break
             #Le cas d'une suite de pions d'une même couleur jusqu'à la sortie du cadre ne permet pas de passer legal à False puisqu'on sort du while sans être passé dessus
@@ -271,11 +269,11 @@ class Game() :
             #if  case_x + step*delta_x < 0 and case_x + step*delta_x > self.nb_cases - 1 and case_y + step*delta_y < 0 and case_y + step*delta_y > self.nb_cases -1 :
             if  case_x + step*delta_x  < 0 or case_x + step*delta_x > self.nb_cases - 1 or case_y + step*delta_y < 0 or case_y + step*delta_y > self.nb_cases -1 :
                 legal = False
-                print("Legal = False  Free_Case : ", free_case)
+                #print("Legal = False  Free_Case : ", free_case)
             #Sorti du while avec legal toujours True <=> Pas de case vide rencontrées 
             
             if legal :
-                print("Legal = True  Free_Case : ", free_case)
+                #print("Legal = True  Free_Case : ", free_case)
                 #print("246")
                 #On ne veut la position qu'une fois dans cette liste
                 if free_case not in self.legal_moves :
@@ -287,7 +285,7 @@ class Game() :
                 else : 
                     self.pawns_to_flip.update({free_case : local_pawns_to_flip})
                 #Suivre ce vecteur et l'allonger jusqu'à rencontrer une case blanche/noire/vide/hors cadre
-                print("self.pawns_to_flip", self.pawns_to_flip, "\n")
+                #print("self.pawns_to_flip", self.pawns_to_flip, "\n")
             
     def remove_legal_moves_GUI(self, x, y) :
         #On enleve le move joué de la liste des coup jouables
@@ -298,71 +296,146 @@ class Game() :
             self.grille.create_oval(move[0]*self.GUI_size/self.nb_cases + self.GUI_size/60, move[1]*self.GUI_size/self.nb_cases + self.GUI_size/60 , (move[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, (move[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, outline = 'green', fill = "green", width = 2)
 
     def flip_pawns(self, x, y) :
+        print("Joueur : ", self.joueur)
+        print("Whites : ", self.white_pawns)
+        print("Blacks : ", self.black_pawns)
+        print("Coup joué : ", (x,y))
+        print("Pions à retourner : ", self.pawns_to_flip[(x,y)])
 
         if self.joueur : 
             #On ajoute le pion qui vient d'être placé
             self.white_pawns.append((x,y))
             for pawn in self.pawns_to_flip[(x,y)] :
-                print("Pawn : ", pawn)
-                print("self.black_pawns : ", self.black_pawns)
-                print("self.white_pawns : ", self.white_pawns)
                 #On enlève de la liste des pions opposés chaque pion pris
                 self.black_pawns.pop(self.black_pawns.index((pawn[0],pawn[1])))
                 #On le rajoute dans la liste des pions similaires
                 self.white_pawns.append((pawn[0],pawn[1]))
                 #On remplace sa couleur sur la grille
-                self.grille.create_oval(pawn[0]*self.GUI_size/self.nb_cases + self.GUI_size/60, pawn[1]*self.GUI_size/self.nb_cases + self.GUI_size/60 , (pawn[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, (pawn[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, outline = 'white', fill = "white", width = 2)
+                if self.GUI : #La condition permet de ne pas créer d'erreur quand on appelle flip_pawns pour la construction de l'arbre
+                    self.grille.create_oval(pawn[0]*self.GUI_size/self.nb_cases + self.GUI_size/60, pawn[1]*self.GUI_size/self.nb_cases + self.GUI_size/60 , (pawn[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, (pawn[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, outline = 'white', fill = "white", width = 2)
         else : 
             self.black_pawns.append((x,y))
             for pawn in self.pawns_to_flip[(x,y)] :
-                print("Pawn : ", pawn)
-                print("self.black_pawns : ", self.black_pawns)
-                print("self.white_pawns : ", self.white_pawns)
                 self.white_pawns.pop(self.white_pawns.index((pawn[0],pawn[1])))
                 self.black_pawns.append((pawn[0],pawn[1]))
-                self.grille.create_oval(pawn[0]*self.GUI_size/self.nb_cases + self.GUI_size/60, pawn[1]*self.GUI_size/self.nb_cases + self.GUI_size/60 , (pawn[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, (pawn[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, outline = 'black', fill = "black", width = 2)
+                if self.GUI : #La condition permet de ne pas créer d'erreur quand on appelle flip_pawns pour la construction de l'arbre
+                    self.grille.create_oval(pawn[0]*self.GUI_size/self.nb_cases + self.GUI_size/60, pawn[1]*self.GUI_size/self.nb_cases + self.GUI_size/60 , (pawn[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, (pawn[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/60, outline = 'black', fill = "black", width = 2)
         
         # print("(x,y) : ", x, ",", y)
-        # print("self.black_pawns : ", self.black_pawns)
-        # print("self.white_pawns : ", self.white_pawns)
-        # print("\n")
+        print("Whites : ", self.white_pawns)
+        print("Blacks : ", self.black_pawns)
+        print("\n")
+        
+        
+    def Compute_tree(self) : 
+        #En gros une suite de compute_legal_moves à partir d'une position initiale
+        #On appelle la classe exploration qui va elle même s'appeler elle-même, normalement on retourne dans la classe game l'arbre finalement construit par la premiere classe exploration fille de game et parente de toutes les autres
+        self.tree = {}
+        self.x = Exploration(self.white_pawns, self.black_pawns, self.legal_moves, self.pawns_to_flip, self.nb_cases, self.GUI_size, method = "MinMax", initial_player = self.joueur, exploration_depth = self.exploration_depth)
+        self.tree.update({"legal_moves":self.x.tree,
+                          "white_pawns":self.white_pawns, #On veut les listes de noirs/blancs après que le coup ait été joué 
+                          "black_pawns":self.black_pawns,
+                          "player_turn":self.joueur}) #On définit le joueur pour un étage comme le joueur de qui ça va être le tour de jouer à partir de cette position 
+        
+        print(self.tree)
+        
+        
+        ####Il faudra supprimer tous les objets créés après avoir obtenu l'arbre, selon la profondeur ça pourra devenir conséquent en mémoire
+        ####Il faudra architecturer pour qu'à chaque coup il ne recalcule que la profondeur d et pas tout l'arbre
+        
+        
+    def Score_positions(self) : 
+        pass
                 
                 
-class Board() :
-    def __init__(self, board_shape = 8) : 
-        #Initialisation de la grille
-        self.board_shape = board_shape
-        self.grid = np.zeros((self.board_shape,self.board_shape), dtype = "str")
+# class Board() :
+#     def __init__(self, board_shape = 8) : 
+#         #Initialisation de la grille
+#         self.board_shape = board_shape
+#         self.grid = np.zeros((self.board_shape,self.board_shape), dtype = "str")
         
-        #Positionnement des premiers pions
-        mid_grid = int(self.board_shape/2) - 1
-        self.grid[mid_grid , mid_grid] = "0"
-        self.grid[mid_grid , mid_grid + 1] = "O"
-        self.grid[mid_grid + 1,mid_grid] = "O"
-        self.grid[mid_grid + 1,mid_grid + 1] = "0"
+#         #Positionnement des premiers pions
+#         mid_grid = int(self.board_shape/2) - 1
+#         self.grid[mid_grid , mid_grid] = "0"
+#         self.grid[mid_grid , mid_grid + 1] = "O"
+#         self.grid[mid_grid + 1,mid_grid] = "O"
+#         self.grid[mid_grid + 1,mid_grid + 1] = "0"
         
-        #Initialisation du dictionnaire d'historique --> Meilleur système de logging ? 
-        self.logs = {}
-        
-        
-
-    
-    def compute_score_moves(moves) :
-        pass
-        
-    def flip_tiles(move) : 
-        pass
+#         #Initialisation du dictionnaire d'historique --> Meilleur système de logging ? 
+#         self.logs = {}
     
     
 
-class Move() :
-    def __init__(self) : 
-        pass
+class Exploration(Game) :
+    def __init__(self, white_pawns, black_pawns, legal_moves, pawns_to_flip, nb_cases, GUI_size, exploration_depth, method = "", initial_player = 0) : 
+        self.init_pawns_to_flip = pawns_to_flip
+        self.initial_white_pawns = white_pawns 
+        self.initial_black_pawns = black_pawns
+        
+        self.method = method #method = MCTS, MinMax, AlphaBeta
+        self.initial_joueur = initial_player
+        
+        self.init_legal_moves = legal_moves
+        
+        self.exploration_depth = exploration_depth
+        self.nb_cases = nb_cases
+        self.GUI_size = GUI_size
+        self.GUI = False
+        self.tree = {}
+        
+        self.Compute_tree()
+        
+    def Compute_tree(self):
+        for move in self.init_legal_moves : #Pour tous les coups possibles pour joueur à une profondeur donnée
+            print("Profondeur : ", self.exploration_depth, " Move : ", move, "ID_classe : ", id(self))
+            
+            #On réinitialise les listes de pions qui vont être manipulées par self.flip_pawns à la position initiale pour tous les coups légaux
+            self.white_pawns = list(self.initial_white_pawns) #Comme la fonction flip_pawns manipule ces listes, à chaque coup joué pour une liste de coup les listes s'aggrégeraient
+            self.black_pawns = list(self.initial_black_pawns) #On en crée deux vide qu'on réinitialisera aux listes initiales à chaque passe de flip_pawns
+            self.pawns_to_flip = self.init_pawns_to_flip
+            self.legal_moves = list(self.init_legal_moves)
+            self.joueur = self.initial_joueur
+            print(id(self.pawns_to_flip), id(self.init_pawns_to_flip))
+            
+            x = move[0]
+            y = move[1]
+            self.flip_pawns(x, y) #On joue un des coups possibles pour le joueur i
+            self.joueur = not(self.initial_joueur)
+            self.compute_legal_moves() #On recalcule les coups légaux pour le joueur i+1 après qu'on ait joué le coup pour le joueur i
+            
+            if self.exploration_depth -1 > 0 :  
+                #On initialise la classe enfant avec les blancs/noirs après le coup du joueur i, avec les moves légaux et les conséquences rattachées pour le joueur i+1
+                child_i = Exploration(self.white_pawns, self.black_pawns, self.legal_moves, self.pawns_to_flip, self.nb_cases, self.GUI_size, exploration_depth = self.exploration_depth -1, method = self.method, initial_player = self.joueur)
+                self.tree.update({str(move):{"legal_moves":child_i.tree,
+                                             "white_pawns":self.white_pawns, #On veut les listes de noirs/blancs après que le coup ait été joué 
+                                             "black_pawns":self.black_pawns,
+                                             "player_turn":self.joueur}  }) #On définit le joueur pour un étage comme le joueur de qui ça va être le tour de jouer à partir de cette position 
+                
+            else : 
+                #On est à la profondeur max et on ne veut pas recréer une classe Exploration
+                #self.compute_legal_moves()
+                #for move in self.legal_moves : 
+                # x = move[0]
+                # y = move[1]
+                
+                # self.flip_pawns(x, y) #On joue un des coups possibles
+                # self.joueur = not(self.initial_joueur)
+                #self.compute_legal_moves() #On recalcule les coups légaux après qu'on ait joué le coup
+                print("Fin d'arbre pour move : ", move, "\n")
+                self.tree.update({str(move):{"legal_moves":self.legal_moves,
+                                             "white_pawns":self.white_pawns,
+                                             "black_pawns":self.black_pawns,
+                                             "player_turn":not(self.joueur)}  }) #On définit une branche de l'arbre correspondant 
+    
+    
+    
+        
     
 G = Game(gametype="H-H", 
          nb_cases=8, 
          GUI=True, 
-         GUI_size=800)
-A = Board()
+         GUI_size=800,
+         exploration_depth = 3)
+#A = Board()
 
     
