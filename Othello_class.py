@@ -477,7 +477,7 @@ class Exploration(Game):
 
 G = Game(gametype="H-H",
          nb_cases=8,
-         GUI=True,w
+         GUI=True,
          GUI_size=800,
          exploration_depth=2)
 # A = Board()
