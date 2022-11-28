@@ -106,54 +106,25 @@ class Game():
             if self.player_turn:
                 x = floor(evt.x / self.tile_size)  # * self.tile_size  # floor == math.floor
                 y = floor(evt.y / self.tile_size)  # * self.tile_size
-                x2 = (floor(evt.x / self.tile_size) + 1) * self.tile_size
-                y2 = (floor(evt.y / self.tile_size) + 1) * self.tile_size
 
                 # move = (x1, y1)
                 print(self.legal_moves)
                 print('x1,y1 :', x, y)
-                if self.joueur == 1:
-                    # /60 permet de réduire la taille des pions dans l'affichage, subjectif
-                    # if (int(x1 / (self.GUI_size / self.nb_tiles)),
-                    #     int(y1 / (self.GUI_size / self.nb_tiles))) in self.legal_moves:
-                    #     self.grille.create_oval(x1 + self.GUI_size / 60, y1 + self.GUI_size / 60, x2 - self.GUI_size / 60,
-                    #                             y2 - self.GUI_size / 60, outline='white', fill="white", width=2)
-                    if (x, y) in self.legal_moves:
-                        self.update_board((x, y), 'white')
-                        # self.remove_legal_moves_GUI(int(x1 / (self.GUI_size / self.nb_tiles)),
-                        #                             int(y1 / (self.GUI_size / self.nb_tiles)))
-                        # self.flip_pawns(int(x1 / (self.GUI_size / self.nb_tiles)),
-                        #                 int(y1 / (self.GUI_size / self.nb_tiles)))
-                        self.remove_legal_moves_GUI(x, y)
-                        self.flip_pawns(x, y)
-
-                        self.joueur = not (self.joueur)
-                        self.compute_legal_moves()
-
+                # if self.joueur == 1:
+                if (x, y) in self.legal_moves:
+                    if self.joueur == True:
+                        color = 'white'
                     else:
-                        print("Illegal Move")
+                        color = 'black'
+                    self.update_board((x, y), color)
+                    self.remove_legal_moves_GUI(x, y)
+                    self.flip_pawns(x, y)
+                    self.joueur = not (self.joueur)
+                    self.compute_legal_moves()
+                    self.player_turn = False
+                    self.IA_play()
                 else:
-                    # if (int(x1 / (self.GUI_size / self.nb_tiles)),
-                    #     int(y1 / (self.GUI_size / self.nb_tiles))) in self.legal_moves:
-                    #     self.grille.create_oval(x1 + self.GUI_size / 60, y1 + self.GUI_size / 60, x2 - self.GUI_size / 60,
-                    #                             y2 - self.GUI_size / 60, outline='black', fill="black", width=2)
-                    #     # update_board(move)
-                    #     self.remove_legal_moves_GUI(int(x1 / (self.GUI_size / self.nb_tiles)),
-                    #                                 int(y1 / (self.GUI_size / self.nb_tiles)))
-                    #     self.flip_pawns(int(x1 / (self.GUI_size / self.nb_tiles)),
-                    #                     int(y1 / (self.GUI_size / self.nb_tiles)))
-                    if (x, y) in self.legal_moves:
-                        self.update_board((x, y), 'black')
-                        self.remove_legal_moves_GUI(x, y)
-                        self.flip_pawns(x, y)
-                        self.joueur = not (self.joueur)
-                        self.compute_legal_moves()
-                    else:
-                        print("Illegal Move")
-
-                # self.Compute_tree()
-                self.player_turn = False
-                self.IA_play()
+                    print("Illegal Move")
             else:
                 print("Not Player's turn")
 
@@ -199,11 +170,6 @@ class Game():
         # Affichage en vert des legal_moves
         if self.GUI:
             for move in self.legal_moves:
-                # self.grille.create_oval(move[0] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-                #                         move[1] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-                #                         (move[0] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-                #                         (move[1] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-                #                         outline='yellow', fill="yellow", width=2)
                 self.update_board(move, 'yellow')
                 # if self.joueur : 
                 #     self.grille.create_oval(move[0]*self.GUI_size/self.nb_tiles + self.GUI_size/3, move[1]*self.GUI_size/self.nb_tiles + self.GUI_size/3 , (move[0]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, (move[1]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, outline = 'white', fill = "white", width = 2)
@@ -430,8 +396,21 @@ class Game():
 
     def IA_play(self):
         print('aaaaa:', self.legal_moves)
-        self.player_turn = True
+        if self.joueur == False:  # au tour des noirs
+            color = 'black'
+        else:
+            color = 'white'
+        move = self.IA_chose_move()  # par défaut l'IA choisit le 1er coup
+        self.update_board(move, color)
+        self.remove_legal_moves_GUI(move[0], move[1])
+        self.flip_pawns(move[0], move[1])
 
+        self.joueur = not (self.joueur)
+        self.compute_legal_moves()
+        self.player_turn = True
+    def IA_chose_move(self):
+        move = self.legal_moves[0]
+        return move
 
 # class Board() :
 #     def __init__(self, board_shape = 8) : 
