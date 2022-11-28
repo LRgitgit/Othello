@@ -11,10 +11,12 @@ from tkinter import ttk
 from math import floor
 
 class Game():
-    def __init__(self, gametype="H-H", nb_cases=8, GUI=True, GUI_size=800, exploration_depth=5):
+    def __init__(self, gametype="H-H", nb_tiles=8, GUI=True, GUI_size=800, exploration_depth=5):
         # Gametype = "H-H", "H-IA", "IA-IA"
-        self.nb_cases = nb_cases
+        self.nb_tiles = nb_tiles
         self.GUI_size = GUI_size
+        self.tile_size = int(self.GUI_size / self.nb_tiles)
+        self.offset = 0.08
         self.GUI = GUI
 
         self.joueur = False
@@ -27,6 +29,7 @@ class Game():
         self.exploration_depth = exploration_depth
 
         self.is_over = False
+        self.player_turn = True
 
         if self.GUI:
             self.init_GUI()
@@ -36,91 +39,121 @@ class Game():
         root = Tk()
         self.grille = Canvas(root, width=self.GUI_size, height=self.GUI_size, background="green")
         self.grille.pack(side=LEFT)
-        for i in range(self.nb_cases):
-            self.grille.create_line((self.GUI_size / self.nb_cases) * (i + 1), 0,
-                                    (self.GUI_size / self.nb_cases) * (i + 1), self.GUI_size, fill='white', width=2)
-            self.grille.create_line(0, (self.GUI_size / self.nb_cases) * (i + 1), self.GUI_size,
-                                    (self.GUI_size / self.nb_cases) * (i + 1), fill='white', width=2)
+        for i in range(self.nb_tiles):
+            self.grille.create_line((self.GUI_size / self.nb_tiles) * (i + 1), 0,
+                                    (self.GUI_size / self.nb_tiles) * (i + 1), self.GUI_size, fill='white', width=2)
+            self.grille.create_line(0, (self.GUI_size / self.nb_tiles) * (i + 1), self.GUI_size,
+                                    (self.GUI_size / self.nb_tiles) * (i + 1), fill='white', width=2)
 
-        # Haut gauche
-        self.grille.create_oval(((self.nb_cases / 2) - 1) * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                ((self.nb_cases / 2) - 1) * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                (self.nb_cases / 2) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                (self.nb_cases / 2) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                outline='white', fill="white", width=2)
-        self.white_pawns.append(((int((self.nb_cases / 2) - 1)), int((self.nb_cases / 2) - 1)))
-        # Haut droit
-        self.grille.create_oval((self.nb_cases / 2) * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                ((self.nb_cases / 2) - 1) * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                ((self.nb_cases / 2) + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                (self.nb_cases / 2) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                outline='black', fill="black", width=2)
-        self.black_pawns.append((int((self.nb_cases / 2)), int((self.nb_cases / 2) - 1)))
-        # Bas Gauche
-        self.grille.create_oval(((self.nb_cases / 2) - 1) * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                (self.nb_cases / 2) * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                (self.nb_cases / 2) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                ((self.nb_cases / 2) + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                outline='black', fill="black", width=2)
-        self.black_pawns.append(((int((self.nb_cases / 2) - 1)), int((self.nb_cases / 2))))
-        # Bas droit
-        self.grille.create_oval((self.nb_cases / 2) * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                (self.nb_cases / 2) * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                ((self.nb_cases / 2) + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                ((self.nb_cases / 2) + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                outline='white', fill="white", width=2)
-        self.white_pawns.append((int((self.nb_cases / 2)), int((self.nb_cases / 2))))
+        for row in [int((self.nb_tiles / 2) - 1), int((self.nb_tiles / 2))]:
+            for col in [int((self.nb_tiles / 2) - 1), int((self.nb_tiles / 2))]:
+                if row == col:
+                    color = 'white'
+                    self.white_pawns.append((row, col))
+                else:
+                    color = 'black'
+                    self.black_pawns.append((row, col))
+                self.grille.create_oval(self.tile_size * (row + self.offset),
+                                        self.tile_size * (col + self.offset),
+                                        self.tile_size * ((row + 1) - self.offset),
+                                        self.tile_size * ((col + 1) - self.offset),
+                                        outline=color, fill=color, width=2)
+
+
+
+        # # Haut gauche
+        # self.grille.create_oval(((self.nb_tiles / 2) - 1) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+        #                         ((self.nb_tiles / 2) - 1) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+        #                         outline='white', fill="white", width=2)
+        # self.white_pawns.append(((int((self.nb_tiles / 2) - 1)), int((self.nb_tiles / 2) - 1)))
+        # # Haut droit
+        # self.grille.create_oval((self.nb_tiles / 2) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+        #                         ((self.nb_tiles / 2) - 1) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+        #                         ((self.nb_tiles / 2) + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+        #                         outline='black', fill="black", width=2)
+        # self.black_pawns.append((int((self.nb_tiles / 2)), int((self.nb_tiles / 2) - 1)))
+        # # Bas Gauche
+        # self.grille.create_oval(((self.nb_tiles / 2) - 1) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+        #                         ((self.nb_tiles / 2) + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+        #                         outline='black', fill="black", width=2)
+        # self.black_pawns.append(((int((self.nb_tiles / 2) - 1)), int((self.nb_tiles / 2))))
+        # # Bas droit
+        # self.grille.create_oval((self.nb_tiles / 2) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+        #                         ((self.nb_tiles / 2) + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+        #                         ((self.nb_tiles / 2) + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+        #                         outline='white', fill="white", width=2)
+        # self.white_pawns.append((int((self.nb_tiles / 2)), int((self.nb_tiles / 2))))
 
         self.compute_legal_moves()
         self.Compute_tree()
 
+        def update_board(move):
+            self.grille.create_oval(move[0] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                    move[1] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                    (move[0] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+                                    (move[1] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60, outline='red',
+                                    fill="red", width=2)
         # Gestion du click souris pour creer les pièces
         def gestion_clic(evt):
+            if self.player_turn:
+                x1 = floor((evt.x / (self.GUI_size / self.nb_tiles))) * self.GUI_size / self.nb_tiles  # floor == math.floor
+                y1 = floor(evt.y / (self.GUI_size / self.nb_tiles)) * self.GUI_size / self.nb_tiles
+                x2 = (floor(evt.x / (self.GUI_size / self.nb_tiles)) + 1) * self.GUI_size / self.nb_tiles
+                y2 = (floor(evt.y / (self.GUI_size / self.nb_tiles)) + 1) * self.GUI_size / self.nb_tiles
 
-            x1 = floor((evt.x / (self.GUI_size / self.nb_cases))) * self.GUI_size / self.nb_cases  # floor == math.floor
-            y1 = floor(evt.y / (self.GUI_size / self.nb_cases)) * self.GUI_size / self.nb_cases
-            x2 = (floor(evt.x / (self.GUI_size / self.nb_cases)) + 1) * self.GUI_size / self.nb_cases
-            y2 = (floor(evt.y / (self.GUI_size / self.nb_cases)) + 1) * self.GUI_size / self.nb_cases
+                move = (x1, y1)
+                if self.joueur == 1:
+                    # /60 permet de réduire la taille des pions dans l'affichage, subjectif
+                    if (int(x1 / (self.GUI_size / self.nb_tiles)),
+                        int(y1 / (self.GUI_size / self.nb_tiles))) in self.legal_moves:
+                        self.grille.create_oval(x1 + self.GUI_size / 60, y1 + self.GUI_size / 60, x2 - self.GUI_size / 60,
+                                                y2 - self.GUI_size / 60, outline='white', fill="white", width=2)
+                        # update_board(move)
+                        self.remove_legal_moves_GUI(int(x1 / (self.GUI_size / self.nb_tiles)),
+                                                    int(y1 / (self.GUI_size / self.nb_tiles)))
+                        self.flip_pawns(int(x1 / (self.GUI_size / self.nb_tiles)),
+                                        int(y1 / (self.GUI_size / self.nb_tiles)))
 
-            if self.joueur == 1:
-                # /60 permet de réduire la taille des pions dans l'affichage, subjectif
-                if (int(x1 / (self.GUI_size / self.nb_cases)),
-                    int(y1 / (self.GUI_size / self.nb_cases))) in self.legal_moves:
-                    self.grille.create_oval(x1 + self.GUI_size / 60, y1 + self.GUI_size / 60, x2 - self.GUI_size / 60,
-                                            y2 - self.GUI_size / 60, outline='white', fill="white", width=2)
-                    self.remove_legal_moves_GUI(int(x1 / (self.GUI_size / self.nb_cases)),
-                                                int(y1 / (self.GUI_size / self.nb_cases)))
-                    self.flip_pawns(int(x1 / (self.GUI_size / self.nb_cases)),
-                                    int(y1 / (self.GUI_size / self.nb_cases)))
+                        self.joueur = not (self.joueur)
+                        self.compute_legal_moves()
 
-                    self.joueur = not (self.joueur)
-                    self.compute_legal_moves()
-
+                    else:
+                        print("Illegal Move")
                 else:
-                    print("Illegal Move")
+                    if (int(x1 / (self.GUI_size / self.nb_tiles)),
+                        int(y1 / (self.GUI_size / self.nb_tiles))) in self.legal_moves:
+                        self.grille.create_oval(x1 + self.GUI_size / 60, y1 + self.GUI_size / 60, x2 - self.GUI_size / 60,
+                                                y2 - self.GUI_size / 60, outline='black', fill="black", width=2)
+                        # update_board(move)
+                        self.remove_legal_moves_GUI(int(x1 / (self.GUI_size / self.nb_tiles)),
+                                                    int(y1 / (self.GUI_size / self.nb_tiles)))
+                        self.flip_pawns(int(x1 / (self.GUI_size / self.nb_tiles)),
+                                        int(y1 / (self.GUI_size / self.nb_tiles)))
+
+                        self.joueur = not (self.joueur)
+                        self.compute_legal_moves()
+                    else:
+                        print("Illegal Move")
+
+                # self.Compute_tree()
+                self.player_turn = False
+                self.IA_play()
             else:
-                if (int(x1 / (self.GUI_size / self.nb_cases)),
-                    int(y1 / (self.GUI_size / self.nb_cases))) in self.legal_moves:
-                    self.grille.create_oval(x1 + self.GUI_size / 60, y1 + self.GUI_size / 60, x2 - self.GUI_size / 60,
-                                            y2 - self.GUI_size / 60, outline='black', fill="black", width=2)
-                    self.remove_legal_moves_GUI(int(x1 / (self.GUI_size / self.nb_cases)),
-                                                int(y1 / (self.GUI_size / self.nb_cases)))
-                    self.flip_pawns(int(x1 / (self.GUI_size / self.nb_cases)),
-                                    int(y1 / (self.GUI_size / self.nb_cases)))
+                print("Not Player's turn")
 
-                    self.joueur = not (self.joueur)
-                    self.compute_legal_moves()
-                else:
-                    print("Illegal Move")
-
-            self.Compute_tree()
 
         self.grille.bind('<Button-1>', gestion_clic)
 
         root.mainloop()
 
     def init_Board(self):
-        self.Board = Board(board_shape=self.nb_cases)
+        self.Board = self.Board(board_shape=self.nb_tiles)
 
     def compute_legal_moves(self):
         # dictionnaire qui comprend les moves légaux et leurs conséquences
@@ -132,7 +165,7 @@ class Game():
         if self.joueur:  # Blanc
             # Check pour tous les pions noirs si une case adjacente permet une prise
             for pawn in self.black_pawns:
-                # Dans les cases légales autour du pion noir considéré
+                # Dans les tiles légales autour du pion noir considéré
                 legal_neighbours = self.check_legal_neighbours(pawn)
 
                 self.check_legal_move(pawn, legal_neighbours)
@@ -140,7 +173,7 @@ class Game():
         else:  # Noir
             # Check pour tous les pions blancs si une case adjacente permet une prise
             for pawn in self.white_pawns:
-                # Dans les cases libres autour du pion opposé considéré
+                # Dans les tiles libres autour du pion opposé considéré
                 legal_neighbours = self.check_legal_neighbours(pawn)
 
                 # On veut que check legal move nous dise : si je pose un pion noir sur un case libre, est-ce que ça fait une prise et si oui quelles conséquences ?
@@ -149,26 +182,26 @@ class Game():
         # Affichage en vert des legal_moves
         if self.GUI:
             for move in self.legal_moves:
-                self.grille.create_oval(move[0] * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                        move[1] * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                        (move[0] + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                        (move[1] + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
+                self.grille.create_oval(move[0] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                        move[1] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                        (move[0] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+                                        (move[1] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
                                         outline='yellow', fill="yellow", width=2)
                 # if self.joueur : 
-                #     self.grille.create_oval(move[0]*self.GUI_size/self.nb_cases + self.GUI_size/3, move[1]*self.GUI_size/self.nb_cases + self.GUI_size/3 , (move[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/3, (move[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/3, outline = 'white', fill = "white", width = 2)
+                #     self.grille.create_oval(move[0]*self.GUI_size/self.nb_tiles + self.GUI_size/3, move[1]*self.GUI_size/self.nb_tiles + self.GUI_size/3 , (move[0]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, (move[1]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, outline = 'white', fill = "white", width = 2)
                 # else : 
-                #     self.grille.create_oval(move[0]*self.GUI_size/self.nb_cases + self.GUI_size/3, move[1]*self.GUI_size/self.nb_cases + self.GUI_size/3 , (move[0]+1)*self.GUI_size/self.nb_cases - self.GUI_size/3, (move[1]+1)*self.GUI_size/self.nb_cases - self.GUI_size/3, outline = 'black', fill = "black", width = 2)
+                #     self.grille.create_oval(move[0]*self.GUI_size/self.nb_tiles + self.GUI_size/3, move[1]*self.GUI_size/self.nb_tiles + self.GUI_size/3 , (move[0]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, (move[1]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, outline = 'black', fill = "black", width = 2)
 
     def check_legal_neighbours(self, pawn):
 
-        # Donne la liste des 8 cases autour du pion opposé considéré
+        # Donne la liste des 8 tiles autour du pion opposé considéré
         pawn_neighbours = self.compute_pawn_neighbours(pawn)
 
         legal_neighbours = []
         for neighbour_case in pawn_neighbours:
-            # Condition pour ne checker que les cases libres autour du pion considéré
+            # Condition pour ne checker que les tiles libres autour du pion considéré
             if neighbour_case not in self.black_pawns and neighbour_case not in self.white_pawns:
-                # On check pour les cases libres autour du pion opposé considéré si elles permettent la prise de ce pion
+                # On check pour les tiles libres autour du pion opposé considéré si elles permettent la prise de ce pion
                 legal_neighbours.append(neighbour_case)
 
         # print("pawn :" ,pawn ," neighbours_list : ", pawn_neighbours, "legal_neighbours : ", legal_neighbours)
@@ -187,9 +220,9 @@ class Game():
 
     def check_legal_move(self, pawn_to_check, legal_neighbours):
         # pawn_to_check = pion opposé considéré
-        # legal_neighbours = Cases libres voisines du pion opposé
+        # legal_neighbours = tiles libres voisines du pion opposé
 
-        # Si je met un pion noir sur une des cases libres, est-ce que ça prend au moins 1 pions blanc ?
+        # Si je met un pion noir sur une des tiles libres, est-ce que ça prend au moins 1 pions blanc ?
 
         if self.joueur == 1:
             # Liste des pions noirs adjacents à la case à check
@@ -219,7 +252,7 @@ class Game():
             # A priori on suppose que legal == True, s'il ne l'est pas la valeur sera changée
             legal = True
             # Tant que la position à checker est dans le champs et que l'arrêt n'est pas déclenché
-            while case_x + step * delta_x >= 0 and case_x + step * delta_x <= self.nb_cases - 1 and case_y + step * delta_y >= 0 and case_y + step * delta_y <= self.nb_cases - 1:
+            while case_x + step * delta_x >= 0 and case_x + step * delta_x <= self.nb_tiles - 1 and case_y + step * delta_y >= 0 and case_y + step * delta_y <= self.nb_tiles - 1:
                 coordinates_to_check = (case_x + step * delta_x, case_y + step * delta_y)
                 # print("coord_to_check ", coordinates_to_check)
                 if self.joueur:  # Joueur Blanc
@@ -284,8 +317,8 @@ class Game():
             # Le cas d'une suite de pions d'une même couleur jusqu'à la sortie du cadre ne permet pas de passer legal à False puisqu'on sort du while sans être passé dessus
             # print("Pawn to check : ", pawn_to_check, " Free case : ", free_case, " local_pawns_to_flip", local_pawns_to_flip)
             # Cette condition permet de ne pas avoir à checker à la checker à chaque tour du while et determine si on est sorti parce que pion blanc ou parce que hors cadre
-            # if  case_x + step*delta_x < 0 and case_x + step*delta_x > self.nb_cases - 1 and case_y + step*delta_y < 0 and case_y + step*delta_y > self.nb_cases -1 :
-            if case_x + step * delta_x < 0 or case_x + step * delta_x > self.nb_cases - 1 or case_y + step * delta_y < 0 or case_y + step * delta_y > self.nb_cases - 1:
+            # if  case_x + step*delta_x < 0 and case_x + step*delta_x > self.nb_tiles - 1 and case_y + step*delta_y < 0 and case_y + step*delta_y > self.nb_tiles -1 :
+            if case_x + step * delta_x < 0 or case_x + step * delta_x > self.nb_tiles - 1 or case_y + step * delta_y < 0 or case_y + step * delta_y > self.nb_tiles - 1:
                 legal = False
                 # print("Legal = False  Free_Case : ", free_case)
             # Sorti du while avec legal toujours True <=> Pas de case vide rencontrées
@@ -311,10 +344,10 @@ class Game():
 
         # On remet de la couleur du fond les coups jouables non joués
         for move in self.legal_moves:
-            self.grille.create_oval(move[0] * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                    move[1] * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                    (move[0] + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                    (move[1] + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60, outline='green',
+            self.grille.create_oval(move[0] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                    move[1] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                    (move[0] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+                                    (move[1] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60, outline='green',
                                     fill="green", width=2)
 
     def flip_pawns(self, x, y):
@@ -334,10 +367,10 @@ class Game():
                 self.white_pawns.append((pawn[0], pawn[1]))
                 # On remplace sa couleur sur la grille
                 if self.GUI:  # La condition permet de ne pas créer d'erreur quand on appelle flip_pawns pour la construction de l'arbre
-                    self.grille.create_oval(pawn[0] * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                            pawn[1] * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                            (pawn[0] + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                            (pawn[1] + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
+                    self.grille.create_oval(pawn[0] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                            pawn[1] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                            (pawn[0] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+                                            (pawn[1] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
                                             outline='white', fill="white", width=2)
         else:
             self.black_pawns.append((x, y))
@@ -345,10 +378,10 @@ class Game():
                 self.white_pawns.pop(self.white_pawns.index((pawn[0], pawn[1])))
                 self.black_pawns.append((pawn[0], pawn[1]))
                 if self.GUI:  # La condition permet de ne pas créer d'erreur quand on appelle flip_pawns pour la construction de l'arbre
-                    self.grille.create_oval(pawn[0] * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                            pawn[1] * self.GUI_size / self.nb_cases + self.GUI_size / 60,
-                                            (pawn[0] + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
-                                            (pawn[1] + 1) * self.GUI_size / self.nb_cases - self.GUI_size / 60,
+                    self.grille.create_oval(pawn[0] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                            pawn[1] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
+                                            (pawn[0] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
+                                            (pawn[1] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
                                             outline='black', fill="black", width=2)
 
         # print("(x,y) : ", x, ",", y)
@@ -360,7 +393,7 @@ class Game():
         # En gros une suite de compute_legal_moves à partir d'une position initiale
         # On appelle la classe exploration qui va elle même s'appeler elle-même, normalement on retourne dans la classe game l'arbre finalement construit par la premiere classe exploration fille de game et parente de toutes les autres
         self.tree = {}
-        self.x = Exploration(self.white_pawns, self.black_pawns, self.legal_moves, self.pawns_to_flip, self.nb_cases,
+        self.x = Exploration(self.white_pawns, self.black_pawns, self.legal_moves, self.pawns_to_flip, self.nb_tiles,
                              self.GUI_size, method="MinMax", initial_player=self.joueur,
                              exploration_depth=self.exploration_depth)
         self.tree.update({"legal_moves": self.x.tree,
@@ -374,7 +407,9 @@ class Game():
         ####Il faudra supprimer tous les objets créés après avoir obtenu l'arbre, selon la profondeur ça pourra devenir conséquent en mémoire
         ####Il faudra architecturer pour qu'à chaque coup il ne recalcule que la profondeur d et pas tout l'arbre
 
-
+    def IA_play(self):
+        print('aaaaa:', self.legal_moves)
+        self.player_turn = True
 
 # class Board() :
 #     def __init__(self, board_shape = 8) : 
@@ -394,7 +429,7 @@ class Game():
 
 
 class Exploration(Game):
-    def __init__(self, white_pawns, black_pawns, legal_moves, pawns_to_flip, nb_cases, GUI_size, exploration_depth,
+    def __init__(self, white_pawns, black_pawns, legal_moves, pawns_to_flip, nb_tiles, GUI_size, exploration_depth,
                  method="", initial_player=0):
         self.init_pawns_to_flip = pawns_to_flip
         self.initial_white_pawns = white_pawns
@@ -406,7 +441,7 @@ class Exploration(Game):
         self.init_legal_moves = legal_moves
 
         self.exploration_depth = exploration_depth
-        self.nb_cases = nb_cases
+        self.nb_tiles = nb_tiles
         self.GUI_size = GUI_size
         self.GUI = False
         self.tree = {}
@@ -444,7 +479,7 @@ class Exploration(Game):
             if self.exploration_depth - 1 > 0:
                 # On initialise la classe enfant avec les blancs/noirs après le coup du joueur i, avec les moves légaux et les conséquences rattachées pour le joueur i+1
                 child_i = Exploration(self.white_pawns, self.black_pawns, self.legal_moves, self.pawns_to_flip,
-                                      self.nb_cases, self.GUI_size, exploration_depth=self.exploration_depth - 1,
+                                      self.nb_tiles, self.GUI_size, exploration_depth=self.exploration_depth - 1,
                                       method=self.method, initial_player=self.joueur)
                 self.tree.update({str(move): {"legal_moves": child_i.tree,
                                               "white_pawns": self.white_pawns,
@@ -463,7 +498,7 @@ class Exploration(Game):
                 # self.joueur = not(self.initial_joueur)
                 # self.compute_legal_moves() #On recalcule les coups légaux après qu'on ait joué le coup
                 print("Fin d'arbre pour move : ", move, "\n")
-                print("pions blancs : ", type(self.white_pawns))
+#                print("pions blancs : ", type(self.white_pawns))
                 if self.joueur == False:  # joueur noir
                     self.eval_position(self.white_pawns)
                 else:
@@ -476,7 +511,7 @@ class Exploration(Game):
                                               "val_position": self.val_position}})  # On définit une branche de l'arbre correspondant
 
 G = Game(gametype="H-H",
-         nb_cases=8,
+         nb_tiles=8,
          GUI=True,
          GUI_size=800,
          exploration_depth=2)
