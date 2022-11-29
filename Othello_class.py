@@ -29,8 +29,9 @@ class Game():
 
         self.exploration_depth = exploration_depth
 
+        self.turn_pass = 0
         self.is_over = False
-        self.player_turn = True
+        self.human_turn = True
         self.game_mode = game_mode  # 'PvP' // 'PvIA' // 'IAvIA'
         if self.GUI:
             self.init_GUI()
@@ -59,28 +60,37 @@ class Game():
         self.compute_legal_moves()
         self.Compute_tree()
 
+        if self.game_mode == 'IAvIA':
+            self.human_turn = False
+            self.IA_play()
         # Gestion du click souris pour creer les pièces
         def gestion_clic(evt):
             if self.is_over == False:
-                if self.player_turn:
+                if self.human_turn:
                     x = floor(evt.x / self.tile_size)  # * self.tile_size  # floor == math.floor
                     y = floor(evt.y / self.tile_size)  # * self.tile_size
 
                     if (x, y) in self.legal_moves:
-                        if self.joueur == True:  # Au tour des blancs
+                        if self.joueur:  # Au tour des blancs
                             color = 'white'
                         else:
                             color = 'black'
                         self.update_board((x, y), color)
                         self.remove_legal_moves_GUI(x, y)
                         self.flip_pawns(x, y)
-                        self.joueur = not (self.joueur)
+                        self.joueur = not self.joueur
                         self.compute_legal_moves()
                         print('GAMEmode:', self.game_mode)
-                        if self.game_mode != 'PvP':  # L'IA ne joue que si on n'est pas en mode Joueur vs Joueur
-                            self.player_turn = False
-                            # if self.game_mode == 'IAvIA':
-                            self.IA_play()
+                        if self.check_pass():  # Pas de coup jouable donc on passe le tour
+                            # check_pass rechange de joueur et recalcule les coups légaux
+                            # ici, c'est encore au tour du joueur humain
+                            if self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
+                                # TODO : compute winner
+                                pass
+                        else:
+                            if self.game_mode == 'PvIA':
+                                self.human_turn = False
+                                self.IA_play()
                     else:
                         print("Illegal Move")
                 else:
@@ -99,6 +109,24 @@ class Game():
                                 self.tile_size * ((x + 1) - self.offset),
                                 self.tile_size * ((y + 1) - self.offset),
                                 outline=color, fill=color, width=2)
+
+    def check_pass(self):
+        if not self.legal_moves:  # le joueur passe si aucun n'est jouable
+            print('turn_pass')
+            self.joueur = not self.joueur  # on change de joueur = on revient au joueur qui vient de jouer
+            self.compute_legal_moves()
+            return True
+        return False
+
+    def check_end(self):  # n'est appelé que si check_pass est vrai
+        # si les 2 joueurs passent leur tour, la partie est finie
+        if not self.legal_moves:  # le joueur passe si aucun n'est jouable
+            self.is_over = True
+            print('is_over: ', self.is_over)
+            # TODO: compute winner
+            return True
+
+        return False
 
     def init_Board(self):
         self.Board = self.Board(board_shape=self.nb_tiles)
@@ -283,9 +311,8 @@ class Game():
                 # print("self.pawns_to_flip", self.pawns_to_flip, "\n")
 
     def remove_legal_moves_GUI(self, x, y):
-        # On enleve le move joué de la liste des coup jouables
+        # On enlève le move joué de la liste des coups jouables
         self.legal_moves.pop(self.legal_moves.index((x, y)))
-
         # On remet de la couleur du fond les coups jouables non joués
         for move in self.legal_moves:
             self.update_board(move, 'green')
@@ -343,7 +370,7 @@ class Game():
                           "white_pawns": self.white_pawns,
                           # On veut les listes de noirs/blancs après que le coup a été joué
                           "black_pawns": self.black_pawns,
-                          "player_turn": self.joueur})  # On définit le joueur pour un étage comme le joueur de qui ça va être le tour de jouer à partir de cette position
+                          "human_turn": self.joueur})  # On définit le joueur pour un étage comme le joueur de qui ça va être le tour de jouer à partir de cette position
 
         print(self.tree)
 
@@ -351,23 +378,37 @@ class Game():
         ####Il faudra architecturer pour qu'à chaque coup il ne recalcule que la profondeur d et pas tout l'arbre
 
     def IA_play(self):
-        print('aaaaa:', self.legal_moves)
-        if self.joueur == False:  # au tour des noirs
-            color = 'black'
-        else:
-            color = 'white'
-        move = self.IA_chose_move()  # par défaut l'IA choisit le 1er coup
-        self.update_board(move, color)
-        self.remove_legal_moves_GUI(move[0], move[1])
-        self.flip_pawns(move[0], move[1])
+        print('IA_play :', self.legal_moves)
+        if not self.is_over:
+            if not self.joueur:  # au tour des noirs
+                color = 'black'
+            else:
+                color = 'white'
+            move = self.IA_chose_move()  # par défaut l'IA choisit le 1er coup
+            self.update_board(move, color)
+            self.remove_legal_moves_GUI(move[0], move[1])
+            self.flip_pawns(move[0], move[1])
 
-        self.joueur = not (self.joueur)
-        self.compute_legal_moves()
-        self.player_turn = True
+            self.joueur = not self.joueur  # on change de joueur
+            self.compute_legal_moves()
+            if self.check_pass():  # Pas de coup jouable donc on passe le tour
+                # check_pass rechange de joueur et recalcule les coups légaux
+                # si après le coup de l'IA il n'y a pas de coups légaux, l'IA rejoue forcément
+                if not self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
+                    self.IA_play()
+                else:
+                    # TODO : compute winner
+                    pass
+            else:  # si on ne passe pas le tour
+                if self.game_mode == 'IAvIA':
+                    self.IA_play()
+                else:  # ceci n'est appelé que si 'PvIA' ou 'IAvIA' donc ce cas est 'PvIA'
+                    self.human_turn = True
 
     def IA_chose_move(self):
         move = self.legal_moves[0]
         return move
+
 
 # class Board() :
 #     def __init__(self, board_shape = 8) : 
@@ -444,7 +485,7 @@ class Exploration(Game):
                                               "white_pawns": self.white_pawns,
                                               # On veut les listes de noirs/blancs après que le coup ait été joué
                                               "black_pawns": self.black_pawns,
-                                              "player_turn": self.joueur}})  # On définit le joueur pour un étage comme le joueur de qui ça va être le tour de jouer à partir de cette position
+                                              "human_turn": self.joueur}})  # On définit le joueur pour un étage comme le joueur de qui ça va être le tour de jouer à partir de cette position
 
             else:
                 # On est à la profondeur max et on ne veut pas recréer une classe Exploration
@@ -465,7 +506,7 @@ class Exploration(Game):
                 self.tree.update({str(move): {"legal_moves": self.legal_moves,
                                               "white_pawns": self.white_pawns,
                                               "black_pawns": self.black_pawns,
-                                              "player_turn": not (
+                                              "human_turn": not (
                                                   self.joueur),
                                               "val_position": self.val_position}})  # On définit une branche de l'arbre correspondant
 
@@ -475,5 +516,5 @@ G = Game(gametype="H-H",
          GUI=True,
          GUI_size=800,
          exploration_depth=2,
-         game_mode='PvIA')
+         game_mode='IAvIA')
 # A = Board()
