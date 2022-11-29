@@ -12,7 +12,7 @@ from math import floor
 
 
 class Game():
-    def __init__(self, gametype="H-H", nb_tiles=8, GUI=True, GUI_size=800, exploration_depth=5):
+    def __init__(self, gametype="H-H", nb_tiles=8, GUI=True, GUI_size=800, exploration_depth=5, game_mode='PvP'):
         # Gametype = "H-H", "H-IA", "IA-IA"
         self.nb_tiles = nb_tiles
         self.GUI_size = GUI_size
@@ -31,7 +31,7 @@ class Game():
 
         self.is_over = False
         self.player_turn = True
-
+        self.game_mode = game_mode  # 'PvP' // 'PvIA' // 'IAvIA'
         if self.GUI:
             self.init_GUI()
 
@@ -46,14 +46,6 @@ class Game():
             self.grille.create_line(0, self.tile_size * (i + 1), self.GUI_size,
                                     self.tile_size * (i + 1), fill='white', width=2)
 
-        # def update_board(move, color):
-        #     x, y = move
-        #     self.grille.create_oval(self.tile_size * (x + self.offset),
-        #                             self.tile_size * (y + self.offset),
-        #                             self.tile_size * ((x + 1) - self.offset),
-        #                             self.tile_size * ((y + 1) - self.offset),
-        #                             outline=color, fill=color, width=2)
-
         for row in [int((self.nb_tiles / 2) - 1), int((self.nb_tiles / 2))]:
             for col in [int((self.nb_tiles / 2) - 1), int((self.nb_tiles / 2))]:
                 if row == col:
@@ -62,71 +54,39 @@ class Game():
                 else:
                     color = 'black'
                     self.black_pawns.append((row, col))
-                # self.grille.create_oval(self.tile_size * (row + self.offset),
-                #                         self.tile_size * (col + self.offset),
-                #                         self.tile_size * ((row + 1) - self.offset),
-                #                         self.tile_size * ((col + 1) - self.offset),
-                #                         outline=color, fill=color, width=2)
                 self.update_board((row, col), color)
-
-        # # Haut gauche
-        # self.grille.create_oval(((self.nb_tiles / 2) - 1) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-        #                         ((self.nb_tiles / 2) - 1) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-        #                         outline='white', fill="white", width=2)
-        # self.white_pawns.append(((int((self.nb_tiles / 2) - 1)), int((self.nb_tiles / 2) - 1)))
-        # # Haut droit
-        # self.grille.create_oval((self.nb_tiles / 2) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-        #                         ((self.nb_tiles / 2) - 1) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-        #                         ((self.nb_tiles / 2) + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-        #                         outline='black', fill="black", width=2)
-        # self.black_pawns.append((int((self.nb_tiles / 2)), int((self.nb_tiles / 2) - 1)))
-        # # Bas Gauche
-        # self.grille.create_oval(((self.nb_tiles / 2) - 1) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-        #                         ((self.nb_tiles / 2) + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-        #                         outline='black', fill="black", width=2)
-        # self.black_pawns.append(((int((self.nb_tiles / 2) - 1)), int((self.nb_tiles / 2))))
-        # # Bas droit
-        # self.grille.create_oval((self.nb_tiles / 2) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-        #                         (self.nb_tiles / 2) * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-        #                         ((self.nb_tiles / 2) + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-        #                         ((self.nb_tiles / 2) + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-        #                         outline='white', fill="white", width=2)
-        # self.white_pawns.append((int((self.nb_tiles / 2)), int((self.nb_tiles / 2))))
 
         self.compute_legal_moves()
         self.Compute_tree()
 
         # Gestion du click souris pour creer les pièces
         def gestion_clic(evt):
-            if self.player_turn:
-                x = floor(evt.x / self.tile_size)  # * self.tile_size  # floor == math.floor
-                y = floor(evt.y / self.tile_size)  # * self.tile_size
+            if self.is_over == False:
+                if self.player_turn:
+                    x = floor(evt.x / self.tile_size)  # * self.tile_size  # floor == math.floor
+                    y = floor(evt.y / self.tile_size)  # * self.tile_size
 
-                # move = (x1, y1)
-                print(self.legal_moves)
-                print('x1,y1 :', x, y)
-                # if self.joueur == 1:
-                if (x, y) in self.legal_moves:
-                    if self.joueur == True:
-                        color = 'white'
+                    if (x, y) in self.legal_moves:
+                        if self.joueur == True:  # Au tour des blancs
+                            color = 'white'
+                        else:
+                            color = 'black'
+                        self.update_board((x, y), color)
+                        self.remove_legal_moves_GUI(x, y)
+                        self.flip_pawns(x, y)
+                        self.joueur = not (self.joueur)
+                        self.compute_legal_moves()
+                        print('GAMEmode:', self.game_mode)
+                        if self.game_mode != 'PvP':  # L'IA ne joue que si on n'est pas en mode Joueur vs Joueur
+                            self.player_turn = False
+                            # if self.game_mode == 'IAvIA':
+                            self.IA_play()
                     else:
-                        color = 'black'
-                    self.update_board((x, y), color)
-                    self.remove_legal_moves_GUI(x, y)
-                    self.flip_pawns(x, y)
-                    self.joueur = not (self.joueur)
-                    self.compute_legal_moves()
-                    self.player_turn = False
-                    self.IA_play()
+                        print("Illegal Move")
                 else:
-                    print("Illegal Move")
+                    print("Not Player's turn")
             else:
-                print("Not Player's turn")
+                print('GAME OVER')
 
         self.grille.bind('<Button-1>', gestion_clic)
 
@@ -328,12 +288,8 @@ class Game():
 
         # On remet de la couleur du fond les coups jouables non joués
         for move in self.legal_moves:
-            # self.grille.create_oval(move[0] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-            #                         move[1] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-            #                         (move[0] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-            #                         (move[1] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60, outline='green',
-            #                         fill="green", width=2)
             self.update_board(move, 'green')
+
     def flip_pawns(self, x, y):
         print("Joueur : ", self.joueur)
         print("Whites : ", self.white_pawns)
@@ -381,7 +337,7 @@ class Game():
         # On appelle la classe exploration qui va elle même s'appeler elle-même, normalement on retourne dans la classe game l'arbre finalement construit par la premiere classe exploration fille de game et parente de toutes les autres
         self.tree = {}
         self.x = Exploration(self.white_pawns, self.black_pawns, self.legal_moves, self.pawns_to_flip, self.nb_tiles,
-                             self.GUI_size, method="MinMax", initial_player=self.joueur,
+                             self.GUI_size, method="MinMax", initial_player=self.joueur, game_mode=self.game_mode,
                              exploration_depth=self.exploration_depth)
         self.tree.update({"legal_moves": self.x.tree,
                           "white_pawns": self.white_pawns,
@@ -408,6 +364,7 @@ class Game():
         self.joueur = not (self.joueur)
         self.compute_legal_moves()
         self.player_turn = True
+
     def IA_chose_move(self):
         move = self.legal_moves[0]
         return move
@@ -431,7 +388,7 @@ class Game():
 
 class Exploration(Game):
     def __init__(self, white_pawns, black_pawns, legal_moves, pawns_to_flip, nb_tiles, GUI_size, exploration_depth,
-                 method="", initial_player=0):
+                 game_mode, method="", initial_player=0):
         self.init_pawns_to_flip = pawns_to_flip
         self.initial_white_pawns = white_pawns
         self.initial_black_pawns = black_pawns
@@ -450,7 +407,8 @@ class Exploration(Game):
         # method_IA à passer dans Game puis comme argument dans compute_tree
         self.val_array = np.loadtxt('pos_value.txt', usecols=range(8))
         self.val_position = 0
-
+        self.game_mode = game_mode
+        print('GAMEMODE : ', self.game_mode)
         self.Compute_tree()
 
     def eval_position(self, position):
@@ -481,7 +439,7 @@ class Exploration(Game):
                 # On initialise la classe enfant avec les blancs/noirs après le coup du joueur i, avec les moves légaux et les conséquences rattachées pour le joueur i+1
                 child_i = Exploration(self.white_pawns, self.black_pawns, self.legal_moves, self.pawns_to_flip,
                                       self.nb_tiles, self.GUI_size, exploration_depth=self.exploration_depth - 1,
-                                      method=self.method, initial_player=self.joueur)
+                                      game_mode=self.game_mode, method=self.method, initial_player=self.joueur)
                 self.tree.update({str(move): {"legal_moves": child_i.tree,
                                               "white_pawns": self.white_pawns,
                                               # On veut les listes de noirs/blancs après que le coup ait été joué
@@ -516,5 +474,6 @@ G = Game(gametype="H-H",
          nb_tiles=8,
          GUI=True,
          GUI_size=800,
-         exploration_depth=2)
+         exploration_depth=2,
+         game_mode='PvIA')
 # A = Board()
