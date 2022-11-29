@@ -9,7 +9,7 @@ import numpy as np
 from tkinter import *
 from tkinter import ttk
 from math import floor
-
+from random import choice
 
 class Game():
     def __init__(self, gametype="H-H", nb_tiles=8, GUI=True, GUI_size=800, exploration_depth=5, game_mode='PvP'):
@@ -26,6 +26,9 @@ class Game():
 
         self.white_pawns = []
         self.black_pawns = []
+        self.position = np.zeros((8, 8))
+        self.winner = None
+
 
         self.exploration_depth = exploration_depth
 
@@ -63,6 +66,7 @@ class Game():
         if self.game_mode == 'IAvIA':
             self.human_turn = False
             self.IA_play()
+
         # Gestion du click souris pour creer les pièces
         def gestion_clic(evt):
             if self.is_over == False:
@@ -85,8 +89,8 @@ class Game():
                             # check_pass rechange de joueur et recalcule les coups légaux
                             # ici, c'est encore au tour du joueur humain
                             if self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
-                                # TODO : compute winner
-                                pass
+                                self.compute_winner()
+                                print(self.position.transpose())
                         else:
                             if self.game_mode == 'PvIA':
                                 self.human_turn = False
@@ -109,6 +113,10 @@ class Game():
                                 self.tile_size * ((x + 1) - self.offset),
                                 self.tile_size * ((y + 1) - self.offset),
                                 outline=color, fill=color, width=2)
+        if color == 'white':
+            self.position[move] = 1
+        elif color == 'black':
+            self.position[move] = -1
 
     def check_pass(self):
         if not self.legal_moves:  # le joueur passe si aucun n'est jouable
@@ -123,7 +131,6 @@ class Game():
         if not self.legal_moves:  # le joueur passe si aucun n'est jouable
             self.is_over = True
             print('is_over: ', self.is_over)
-            # TODO: compute winner
             return True
 
         return False
@@ -299,7 +306,7 @@ class Game():
                 # print("Legal = True  Free_Case : ", free_case)
                 # print("246")
                 # On ne veut la position qu'une fois dans cette liste
-                if free_case not in self.legal_moves:
+                if free_case not in self.legal_moves and self.nb_tiles not in free_case and free_case[0] >= 0 and free_case[1] >= 0:
                     self.legal_moves.append(free_case)
                 # On ajoute au dictionnaire des consequences les pions à retourner si cette position est choisie
                 if free_case in list(self.pawns_to_flip.keys()):
@@ -334,11 +341,6 @@ class Game():
                 self.white_pawns.append((pawn[0], pawn[1]))
                 # On remplace sa couleur sur la grille
                 if self.GUI:  # La condition permet de ne pas créer d'erreur quand on appelle flip_pawns pour la construction de l'arbre
-                    # self.grille.create_oval(pawn[0] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-                    #                         pawn[1] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-                    #                         (pawn[0] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-                    #                         (pawn[1] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-                    #                         outline='white', fill="white", width=2)
                     self.update_board(pawn, 'white')
 
         else:
@@ -347,16 +349,12 @@ class Game():
                 self.white_pawns.pop(self.white_pawns.index((pawn[0], pawn[1])))
                 self.black_pawns.append((pawn[0], pawn[1]))
                 if self.GUI:  # La condition permet de ne pas créer d'erreur quand on appelle flip_pawns pour la construction de l'arbre
-                    # self.grille.create_oval(pawn[0] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-                    #                         pawn[1] * self.GUI_size / self.nb_tiles + self.GUI_size / 60,
-                    #                         (pawn[0] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-                    #                         (pawn[1] + 1) * self.GUI_size / self.nb_tiles - self.GUI_size / 60,
-                    #                         outline='black', fill="black", width=2)
                     self.update_board(pawn, 'black')
 
         # print("(x,y) : ", x, ",", y)
         print("Whites : ", self.white_pawns)
         print("Blacks : ", self.black_pawns)
+        print("MATRICE :", self.position.transpose())
         print("\n")
 
     def Compute_tree(self):
@@ -364,8 +362,8 @@ class Game():
         # On appelle la classe exploration qui va elle même s'appeler elle-même, normalement on retourne dans la classe game l'arbre finalement construit par la premiere classe exploration fille de game et parente de toutes les autres
         self.tree = {}
         self.x = Exploration(self.white_pawns, self.black_pawns, self.legal_moves, self.pawns_to_flip, self.nb_tiles,
-                             self.GUI_size, method="MinMax", initial_player=self.joueur, game_mode=self.game_mode,
-                             exploration_depth=self.exploration_depth)
+                             self.GUI_size, method="MinMax", initial_player=self.joueur,position=self.position,
+                             game_mode=self.game_mode, exploration_depth=self.exploration_depth)
         self.tree.update({"legal_moves": self.x.tree,
                           "white_pawns": self.white_pawns,
                           # On veut les listes de noirs/blancs après que le coup a été joué
@@ -397,8 +395,8 @@ class Game():
                 if not self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
                     self.IA_play()
                 else:
-                    # TODO : compute winner
-                    pass
+                    self.compute_winner()
+                    print(self.position.transpose())
             else:  # si on ne passe pas le tour
                 if self.game_mode == 'IAvIA':
                     self.IA_play()
@@ -406,8 +404,18 @@ class Game():
                     self.human_turn = True
 
     def IA_chose_move(self):
-        move = self.legal_moves[0]
+        move = choice(self.legal_moves)
         return move
+
+    def compute_winner(self):
+        if self.position.sum() > 0:  # Plus de pions blancs que noirs donc les blancs gagnent
+            self.winner = 'Blanc'
+            print('Les blancs gagnent')
+        elif self.position.sum() < 0:
+            self.winner = 'Noir'
+            print('Les noirs gagnent')
+        else:
+            print('Draw')
 
 
 # class Board() :
@@ -429,7 +437,7 @@ class Game():
 
 class Exploration(Game):
     def __init__(self, white_pawns, black_pawns, legal_moves, pawns_to_flip, nb_tiles, GUI_size, exploration_depth,
-                 game_mode, method="", initial_player=0):
+                 position, game_mode, method="", initial_player=0):
         self.init_pawns_to_flip = pawns_to_flip
         self.initial_white_pawns = white_pawns
         self.initial_black_pawns = black_pawns
@@ -438,7 +446,7 @@ class Exploration(Game):
         self.initial_joueur = initial_player
 
         self.init_legal_moves = legal_moves
-
+        self.position = position
         self.exploration_depth = exploration_depth
         self.nb_tiles = nb_tiles
         self.GUI_size = GUI_size
@@ -480,7 +488,8 @@ class Exploration(Game):
                 # On initialise la classe enfant avec les blancs/noirs après le coup du joueur i, avec les moves légaux et les conséquences rattachées pour le joueur i+1
                 child_i = Exploration(self.white_pawns, self.black_pawns, self.legal_moves, self.pawns_to_flip,
                                       self.nb_tiles, self.GUI_size, exploration_depth=self.exploration_depth - 1,
-                                      game_mode=self.game_mode, method=self.method, initial_player=self.joueur)
+                                      position=self.position, game_mode=self.game_mode, method=self.method,
+                                      initial_player=self.joueur)
                 self.tree.update({str(move): {"legal_moves": child_i.tree,
                                               "white_pawns": self.white_pawns,
                                               # On veut les listes de noirs/blancs après que le coup ait été joué
@@ -516,5 +525,5 @@ G = Game(gametype="H-H",
          GUI=True,
          GUI_size=800,
          exploration_depth=2,
-         game_mode='IAvIA')
+         game_mode='PvP')
 # A = Board()
