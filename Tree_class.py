@@ -1,5 +1,9 @@
+from math import inf
+
+
 class TreeNode:
-    def __init__(self, legal_moves, white_pawns, black_pawns, pawns_to_flip, player, position, val_position):
+    def __init__(self, legal_moves, white_pawns, black_pawns, pawns_to_flip, player, position, val_position,
+                 alpha=-inf, beta=inf):
         self.legal_moves = legal_moves
         self.white_pawns = white_pawns
         self.black_pawns = black_pawns
@@ -7,6 +11,8 @@ class TreeNode:
         self.player = player
         self.position = position
         self.val_position = val_position
+        self.alpha = alpha
+        self.beta = beta
         self.children_val = []
         self.children = []
         self.parent = None

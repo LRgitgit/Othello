@@ -39,7 +39,7 @@ def get_b_w(position):
     return black, white
 
 
-def recursion_MinMax(tree, joueur):
+def recursion_MinMax(tree, player):
     # print(type(tree), tree)
     # print(type(tree['legal_moves']), tree['legal_moves'])
     # print(type(tree['legal_moves']['(1, 1)']), tree['legal_moves']['(1, 1)'])
@@ -53,13 +53,13 @@ def recursion_MinMax(tree, joueur):
     '''
     # if not tree['white_pawns']:  # les blancs ont perdu
     #     # print(tree['move'])
-    #     if joueur:
+    #     if player:
     #         val = -inf
     #     else:
     #         val = inf
     #     return tree['move'], val
     # elif not tree['black_pawns']:  # les noirs ont perdu
-    #     if joueur:
+    #     if player:
     #         val = inf
     #     else:
     #         val = -inf
@@ -77,23 +77,22 @@ def recursion_MinMax(tree, joueur):
             return tree['move'], tree['val_position']  # on remonte le coup et sa valeur estimée
         if not tree['legal_moves'][move]['white_pawns']:  # les blancs ont perdu
             # print(tree['move'])
-            if joueur:
+            if player:
                 val = -inf
             else:
                 val = inf
             return tree['move'], val
         elif not tree['legal_moves'][move]['black_pawns']:  # les noirs ont perdu
-            if joueur:
+            if player:
                 val = inf
             else:
                 val = -inf
             return tree['move'], val
 
-
         # on n'est pas sur un noeud feuille donc on parcourt tous les coups possibles pour ce noeud
-        l_coups.append(recursion_MinMax(tree['legal_moves'][move], not joueur))
+        l_coups.append(recursion_MinMax(tree['legal_moves'][move], not player))
     max_val, min_val = -inf, inf
-    if joueur:  # joueur blanc => on remonte le max
+    if player:  # player blanc => on remonte le max
         max_i = 0
         for i, coup in enumerate(l_coups):
             if coup[1] >= max_val:  # si la position remontée est plus élevée que le max
@@ -112,14 +111,14 @@ def recursion_MinMax(tree, joueur):
 def eval_MinMax(G):
     G.compute_tree()
     tree = G.tree
-    joueur = G.joueur
-    best_move = recursion_MinMax(tree, joueur)
+    player = G.player
+    best_move = recursion_MinMax(tree, player)
     return best_move
 
 
-def load_position(position, joueur, depth):
+def load_position(position, player, depth):
     b_pawns, w_pawns = get_b_w(position)
-    start_position = [b_pawns, w_pawns, joueur]
+    start_position = [b_pawns, w_pawns, player]
     G = Game(nb_tiles=8,
              GUI=True,
              GUI_size=800,
@@ -137,16 +136,17 @@ def load_position(position, joueur, depth):
     return G
 
 
-if __name__ == '__main__':
+def test_IA(IA_mode, depth, nb_games=50):
     nb_win_white = 0
-    nb_games = 100
+    nb_games = nb_games
     for k in range(nb_games):
         G = Game(nb_tiles=8,
                  GUI=False,
                  GUI_size=800,
-                 exploration_depth=2,
+                 exploration_depth=depth,
                  game_mode='IAvIA',
-                 start_position='default')
+                 start_position='default',
+                 IA_mode=IA_mode)
         if G.GUI:
             G.init_GUI()
         G.init_game()
@@ -155,41 +155,28 @@ if __name__ == '__main__':
             G.root.mainloop()
         if G.winner == 'Blanc':
             nb_win_white += 1
-    print(nb_win_white/nb_games)
+    return nb_win_white / nb_games
 
-    # b_pawns = [(2, 2), (3, 3), (5, 3), (4, 3)]
-    # w_pawns = [(3, 4), (2, 3), (5, 4), (4, 4)]
-    # b_pawns = [(4, 3), (1, 3), (2, 3), (3, 3)]
-    # w_pawns = [(3, 4), (4, 4), (5, 4), (1, 1), (2, 2), (6, 2), (5, 3)]
-    # b_pawns = [(4, 2), (4, 3), (6, 4), (5, 3), (4, 6), (5, 5), (4, 5)]
-    # w_pawns = [(3, 3), (3, 5), (3, 4), (5, 4), (4, 4)]
 
-    # position = np.zeros((8, 8))
-    # for elem in w_pawns:
-    #     position[elem] = 1
-    # for elem in b_pawns:
-    #     position[elem] = -1
-    # position = position.transpose()
-    # # print(position)
-    # # print(position)
-    # joueur = False
+if __name__ == '__main__':
+    IA_1 = 'alphabeta'
+    IA_2 = 'random'
+    IA_mode = (IA_1, IA_2)
+    # score_IA = test_IA(IA_mode=IA_mode, depth=2, nb_games=50)
+    # print(score_IA)
 
-    # G = load_position(position, joueur, 1)
-    # G.start_playing()
-    # G.eval_position()
-    # initialisation de l'arbre des coups
-    # print(G.position.transpose())
-    # tree_root = TreeNode(G.legal_moves.copy(), G.white_pawns.copy(), G.black_pawns.copy(), G.pawns_to_flip.copy(),
-    #                      G.joueur, G.position, G.val_position)
-    # print(tree_root.val_position)
-    # print(G.position.transpose())
-    # id_best_move = G.compute_tree(depth=2, tree_parent=tree_root)
-    # G.black_pawns, G.white_pawns = tree_root.black_pawns, tree_root.white_pawns
 
-    # print(tree_root.black_pawns, tree_root.white_pawns)
-    # print(id_best_move)
-    # tree_root.print_tree()
-    # print(eval_MinMax(G))
-    # if G.root:
-    #     G.root.mainloop()
-
+    ''' play game PvP'''
+    G = Game(nb_tiles=8,
+             GUI=True,
+             GUI_size=800,
+             exploration_depth=1,
+             game_mode='PvIA',
+             start_position='default',
+             IA_mode=IA_mode)
+    G.init_GUI()
+    G.init_game()
+    G.start_playing()
+    G.root.mainloop()
+    print(G.winner)
+    ''' play game PvP'''
