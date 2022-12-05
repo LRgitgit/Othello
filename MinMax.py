@@ -138,38 +138,50 @@ def load_position(position, joueur, depth):
 
 
 if __name__ == '__main__':
+    G = Game(nb_tiles=8,
+             GUI=True,
+             GUI_size=800,
+             exploration_depth=2,
+             game_mode='IAvIA',
+             start_position='default')
+    G.init_GUI()
+    G.init_game()
+    G.start_playing()
+    G.root.mainloop()
+    print(G.winner)
+
     # b_pawns = [(2, 2), (3, 3), (5, 3), (4, 3)]
     # w_pawns = [(3, 4), (2, 3), (5, 4), (4, 4)]
-    b_pawns = [(4, 3), (1, 3), (2, 3), (3, 3)]
-    w_pawns = [(3, 4), (4, 4), (5, 4), (1, 1), (2, 2), (6, 2), (5, 3)]
+    # b_pawns = [(4, 3), (1, 3), (2, 3), (3, 3)]
+    # w_pawns = [(3, 4), (4, 4), (5, 4), (1, 1), (2, 2), (6, 2), (5, 3)]
     # b_pawns = [(4, 2), (4, 3), (6, 4), (5, 3), (4, 6), (5, 5), (4, 5)]
     # w_pawns = [(3, 3), (3, 5), (3, 4), (5, 4), (4, 4)]
 
-    position = np.zeros((8, 8))
-    for elem in w_pawns:
-        position[elem] = 1
-    for elem in b_pawns:
-        position[elem] = -1
-    position = position.transpose()
-    # print(position)
-    # print(position)
-    joueur = False
+    # position = np.zeros((8, 8))
+    # for elem in w_pawns:
+    #     position[elem] = 1
+    # for elem in b_pawns:
+    #     position[elem] = -1
+    # position = position.transpose()
+    # # print(position)
+    # # print(position)
+    # joueur = False
 
-    G = load_position(position, joueur, 1)
+    # G = load_position(position, joueur, 1)
     # G.start_playing()
-    G.eval_position()
+    # G.eval_position()
     # initialisation de l'arbre des coups
     # print(G.position.transpose())
-    tree_root = TreeNode(G.legal_moves.copy(), G.white_pawns.copy(), G.black_pawns.copy(), G.pawns_to_flip.copy(),
-                         G.joueur, G.position, G.val_position)
+    # tree_root = TreeNode(G.legal_moves.copy(), G.white_pawns.copy(), G.black_pawns.copy(), G.pawns_to_flip.copy(),
+    #                      G.joueur, G.position, G.val_position)
     # print(tree_root.val_position)
     # print(G.position.transpose())
-    id_best_move = G.compute_tree(depth=2, tree_parent=tree_root)
+    # id_best_move = G.compute_tree(depth=2, tree_parent=tree_root)
     # G.black_pawns, G.white_pawns = tree_root.black_pawns, tree_root.white_pawns
 
     # print(tree_root.black_pawns, tree_root.white_pawns)
-    print(id_best_move)
-    tree_root.print_tree()
+    # print(id_best_move)
+    # tree_root.print_tree()
     # print(eval_MinMax(G))
     if G.root:
         G.root.mainloop()

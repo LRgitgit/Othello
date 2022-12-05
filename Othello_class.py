@@ -439,7 +439,14 @@ class Game():
             # print(self.tree)
 
     def IA_chose_move(self):
-        move = choice(self.legal_moves)
+        if self.joueur:  # le joueur blanc choisit son coup grâce au MinMax
+            self.eval_position()
+            tree_root = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(), self.black_pawns.copy(),
+                                 self.pawns_to_flip.copy(), self.joueur, self.position, self.val_position)
+            id_best_move = self.compute_tree(depth=self.exploration_depth, tree_parent=tree_root)
+            move = self.legal_moves[id_best_move]
+        else:
+            move = choice(self.legal_moves)
         return move
 
     def compute_winner(self):
@@ -520,7 +527,24 @@ class Game():
         # print(self.val_array)
         # print(self.position.transpose())
         # print(self.val_array*self.position.transpose())
-        self.val_position = (self.val_array * self.position).sum()
+        if not self.white_pawns:  # il n'y a plus de pions blancs
+            self.val_position = -inf
+        elif not self.black_pawns:
+            self.val_position = inf
+        elif self.check_pass():
+            if self.check_end():
+                self.compute_winner()
+                if self.winner == 'Blanc':
+                    self.val_position = inf
+                elif self.winner == 'Noir':
+                    self.val_position = -inf
+                else:
+                    self.val_position = 0
+            else:
+                self.joueur = not self.joueur  # on retourne au joueur d'avant
+                self.val_position = (self.val_array * self.position).sum()
+        else:
+            self.val_position = (self.val_array * self.position).sum()
         # print(self.val_position)
 
 
