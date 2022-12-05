@@ -138,17 +138,24 @@ def load_position(position, joueur, depth):
 
 
 if __name__ == '__main__':
-    G = Game(nb_tiles=8,
-             GUI=True,
-             GUI_size=800,
-             exploration_depth=2,
-             game_mode='IAvIA',
-             start_position='default')
-    G.init_GUI()
-    G.init_game()
-    G.start_playing()
-    G.root.mainloop()
-    print(G.winner)
+    nb_win_white = 0
+    nb_games = 100
+    for k in range(nb_games):
+        G = Game(nb_tiles=8,
+                 GUI=False,
+                 GUI_size=800,
+                 exploration_depth=2,
+                 game_mode='IAvIA',
+                 start_position='default')
+        if G.GUI:
+            G.init_GUI()
+        G.init_game()
+        G.start_playing()
+        if G.root:
+            G.root.mainloop()
+        if G.winner == 'Blanc':
+            nb_win_white += 1
+    print(nb_win_white/nb_games)
 
     # b_pawns = [(2, 2), (3, 3), (5, 3), (4, 3)]
     # w_pawns = [(3, 4), (2, 3), (5, 4), (4, 4)]
@@ -183,6 +190,6 @@ if __name__ == '__main__':
     # print(id_best_move)
     # tree_root.print_tree()
     # print(eval_MinMax(G))
-    if G.root:
-        G.root.mainloop()
+    # if G.root:
+    #     G.root.mainloop()
 

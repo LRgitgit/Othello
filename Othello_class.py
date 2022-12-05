@@ -13,7 +13,7 @@ from random import choice
 from Tree_class import *
 
 
-class Game():
+class Game:
     def __init__(self, nb_tiles=8, GUI=True, GUI_size=800, exploration_depth=5, game_mode='PvP',
                  start_position='default'):
         self.root = None
@@ -91,7 +91,6 @@ class Game():
 
     def start_playing(self):
         self.compute_legal_moves()
-        # self.compute_tree_old()
 
         if self.game_mode == 'IAvIA':
             self.human_turn = False
@@ -116,9 +115,9 @@ class Game():
                     self.joueur = not self.joueur
                     self.compute_legal_moves()
                     self.eval_position()
-                    print(self.black_pawns)
-                    print(self.white_pawns)
-                    print('\n')
+                    # print(self.black_pawns)
+                    # print(self.white_pawns)
+                    # print('\n')
                     if self.check_pass():  # Pas de coup jouable donc on passe le tour
                         # check_pass rechange de joueur et recalcule les coups légaux
                         # ici, c'est encore au tour du joueur humain
@@ -434,7 +433,7 @@ class Game():
                     self.IA_play()
                 else:  # ceci n'est appelé que si 'PvIA' ou 'IAvIA' donc ce cas est 'PvIA'
                     self.human_turn = True
-            print(self.position.transpose())
+            # print(self.position.transpose())
             # self.compute_tree_old()
             # print(self.tree)
 
@@ -447,6 +446,7 @@ class Game():
             move = self.legal_moves[id_best_move]
         else:
             move = choice(self.legal_moves)
+        # print(self.joueur, move)
         return move
 
     def compute_winner(self):
@@ -541,7 +541,7 @@ class Game():
                 else:
                     self.val_position = 0
             else:
-                self.joueur = not self.joueur  # on retourne au joueur d'avant
+                # self.joueur = not self.joueur  # on retourne au joueur d'avant
                 self.val_position = (self.val_array * self.position).sum()
         else:
             self.val_position = (self.val_array * self.position).sum()
