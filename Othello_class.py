@@ -99,6 +99,7 @@ class Game:
 
     def gestion_clic(self, evt):
         if not self.is_over:
+            # print(self.player)
             if self.human_turn:
                 x = floor(evt.x / self.tile_size)  # * self.tile_size  # floor == math.floor
                 y = floor(evt.y / self.tile_size)  # * self.tile_size
@@ -115,20 +116,19 @@ class Game:
                     self.flip_pawns(x, y)
                     self.player = not self.player
                     self.compute_legal_moves()
-                    self.eval_position()
-                    # print(self.black_pawns)
-                    # print(self.white_pawns)
-                    # print('\n')
-                    if self.check_pass():  # Pas de coup jouable donc on passe le tour
-                        # check_pass rechange de joueur et recalcule les coups légaux
-                        # ici, c'est encore au tour du joueur humain
-                        if self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
-                            self.compute_winner()
-                            ##print(self.position.transpose())
-                    else:
-                        if self.game_mode == 'PvIA':
+                    if not self.check_pass():  # Le joueur suivant ne passe pas
+                        if self.game_mode == 'PvIA':  # En PvIA, c'est donc au tour de l'IA
                             self.human_turn = False
                             self.IA_play()
+                        elif self.game_mode == 'PvP':  # En PvP c'est au tour de l'humain (mais le joueur suivant)
+                            self.human_turn = True
+                    else:  # Pas de coup jouable donc on passe le tour
+                        # check_pass rechange de joueur et recalcule les coups légaux
+                        # ici, c'est encore au tour du joueur humain
+                        self.human_turn = True
+                        if self.check_end():
+                            self.compute_winner()
+                            # print(self.position.transpose())
                 else:
                     print("Illegal Move")
             else:
@@ -159,7 +159,6 @@ class Game:
             self.is_over = True
             ##print('is_over: ', self.is_over)
             return True
-
         return False
 
     def compute_legal_moves(self):
@@ -382,6 +381,7 @@ class Game:
     def IA_play(self):
         # print('IA_play :', self.legal_moves)
         if not self.is_over:
+            # print(self.player)
             move = self.IA_chose_move()  # par défaut l'IA choisit le 1er coup
             if not self.player:  # au tour des noirs
                 color = 'black'
@@ -399,10 +399,11 @@ class Game:
             if self.check_pass():  # Pas de coup jouable donc on passe le tour
                 # check_pass rechange de joueur et recalcule les coups légaux
                 # si après le coup de l'IA il n'y a pas de coups légaux, l'IA rejoue forcément
-                if not self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
-                    self.IA_play()
+                if self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
+                    self.compute_winner()  # self.player = not self.player
+                    # self.compute_legal_moves()
                 else:
-                    self.compute_winner()
+                    self.IA_play()
                     ##print(self.position.transpose())
             else:  # si on ne passe pas le tour
                 if self.game_mode == 'IAvIA':
@@ -415,7 +416,7 @@ class Game:
     def IA_chose_move(self):
         self.eval_position()
         tree_root = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(), self.black_pawns.copy(),
-                             self.pawns_to_flip.copy(), self.player, self.position, self.val_position)
+                             self.pawns_to_flip.copy(), self.player, np.array(self.position), self.val_position)
         if self.player:  # le joueur blanc choisit son coup
             if self.IA_mode[0] == 'minmax':  # les blancs jouent en minmax
                 id_best_move = self.MinMax(depth=self.exploration_depth, tree_parent=tree_root)
@@ -478,9 +479,9 @@ class Game:
                 self.compute_winner()
                 self.is_over = False  # Pour ne pas arrêter la partie
                 if self.winner == 'Blanc':
-                    return inf
+                    return 2000
                 elif self.winner == 'Noir':
-                    return -inf
+                    return -2000
                 else:
                     return 0  # Egalité : on évalue la position à 0
 
@@ -494,9 +495,10 @@ class Game:
                     self.compute_legal_moves()
                 self.eval_position()
                 tree_child = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(), self.black_pawns.copy(),
-                                     self.pawns_to_flip.copy(), self.player, np.array(self.position), self.val_position)
+                                      self.pawns_to_flip.copy(), self.player, np.array(self.position),
+                                      self.val_position)
                 tree_child.add_parent(tree_parent)
-                tree_parent.children_val.append(self.MinMax(depth=depth-1, tree_parent=tree_child))
+                tree_parent.children_val.append(self.MinMax(depth=depth - 1, tree_parent=tree_child))
 
             if tree_parent.parent is None:
                 self.while_eval = False
@@ -542,35 +544,76 @@ class Game:
                     self.compute_legal_moves()
                 self.eval_position()
                 tree_child = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(), self.black_pawns.copy(),
-                                     self.pawns_to_flip.copy(), self.player, np.array(self.position), self.val_position,
-                                      tree_parent.alpha, tree_parent.beta)
+                                      self.pawns_to_flip.copy(), self.player, np.array(self.position),
+                                      self.val_position, tree_parent.alpha, tree_parent.beta)
                 tree_child.add_parent(tree_parent)
-                children_val = self.AlphaBeta(depth=depth-1, tree_parent=tree_child)
+                children_val = self.AlphaBeta(depth=depth - 1, tree_parent=tree_child)
                 tree_parent.children_val.append(children_val)
                 if tree_parent.player:  # parent joue blanc donc remonte le max des alpha
                     tree_parent.alpha = max(tree_parent.alpha, children_val)
-                    if tree_parent.alpha >= tree_parent.beta:
+                    if tree_parent.alpha >= tree_parent.beta and tree_parent.parent is not None:
                         return tree_parent.alpha
                 else:
                     tree_parent.beta = min(tree_parent.beta, children_val)
-                    if tree_parent.alpha >= tree_parent.beta:
+                    if tree_parent.alpha >= tree_parent.beta and tree_parent.parent is not None:
                         return tree_parent.beta
 
             if tree_parent.parent is None:
                 self.while_eval = False
                 self.init_param(tree_parent)
+                # print('is over:', self.is_over)
                 if tree_parent.player:  # les blancs commencent
                     # print(np.argmax(tree_parent.children_val))
                     return np.argmax(tree_parent.children_val)
                 else:
                     # print(np.argmin(tree_parent.children_val))
                     return np.argmin(tree_parent.children_val)
-
-            if tree_parent.player:
+            elif tree_parent.player:
                 return tree_parent.alpha
             else:
                 return tree_parent.beta
 
+    def MCTS(self, tree_root, C=2, n_simul=100, n_iter=10):
+        """
+        :type tree_parent: TreeNode
+        """
+        self.while_eval = True
+
+        for _ in range(n_iter):
+            current_node = tree_root
+        # 1 : Tree traversal
+            while current_node.children or current_node == tree_root:
+                # is current not a leaf node
+                # or the start node
+                current_node = tree_root.tree_traversal(C)
+        # 2 : Node Expansion
+            if current_node.nb_trial != 0:
+                if current_node.legal_moves:
+                    for move in current_node.legal_moves:
+                        self.init_param(current_node)
+                        # print(self.player)
+                        if not self.check_pass():
+                            x, y = move
+                            self.flip_pawns(x, y)
+                            # print(tree_root.player)
+                            # print(self.player)
+                            self.player = not current_node.player
+                            self.compute_legal_moves()
+                        self.eval_position()
+                        tree_child = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(), self.black_pawns.copy(),
+                                              self.pawns_to_flip.copy(), self.player, np.array(self.position),
+                                              self.val_position)
+                        current_node.add_child(tree_child)
+                else:  # pas de coup à jouer
+                    if self.check_pass():
+                        if self.check_end():
+                            pass
+
+                if current_node.children:  # un
+                    current_node = current_node.children[0]
+        # 3 : Rollout
+
+        # 4 : Backpropagation
 
     def eval_position(self):
         # print("position : ", position)
@@ -578,12 +621,14 @@ class Game:
         # print(self.position.transpose())
         # print(self.val_array*self.position.transpose())
         if not self.white_pawns:  # il n'y a plus de pions blancs
-            self.val_position = -inf
+            self.val_position = -2000  # valeur arbitraire très grande en valeur absolue pour victoire ou défaite
+            # si val_position = inf cela cause des problèmes avec le inf du alpha beta à l'initialisation
         elif not self.black_pawns:
-            self.val_position = inf
+            self.val_position = 2000
         elif self.check_pass():
             if self.check_end():
                 self.compute_winner()
+                self.is_over = False
                 if self.winner == 'Blanc':
                     self.val_position = 2000
                 elif self.winner == 'Noir':
@@ -593,6 +638,8 @@ class Game:
             else:
                 # self.player = not self.player  # on retourne au joueur d'avant
                 self.val_position = (self.val_array * self.position).sum()
+            # self.player = not self.player
+            # self.compute_legal_moves()
         else:
             self.val_position = (self.val_array * self.position).sum()
 

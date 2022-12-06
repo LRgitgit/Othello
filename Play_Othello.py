@@ -1,5 +1,5 @@
 from Othello_class import *
-
+from time import time
 
 # G = Game(nb_tiles=8,
 #          GUI=True,
@@ -159,24 +159,36 @@ def test_IA(IA_mode, depth, nb_games=50):
 
 
 if __name__ == '__main__':
-    IA_1 = 'alphabeta'
+    start = time()
+    IA_1 = 'minmax'
     IA_2 = 'random'
     IA_mode = (IA_1, IA_2)
-    # score_IA = test_IA(IA_mode=IA_mode, depth=2, nb_games=50)
+    score_IA = test_IA(IA_mode=IA_mode, depth=2, nb_games=20)
+    print(score_IA)
+    print(time() - start)
+
+    # start = time()
+    # IA_1 = 'minmax'
+    # IA_2 = 'random'
+    # IA_mode = (IA_1, IA_2)
+    # score_IA = test_IA(IA_mode=IA_mode, depth=3, nb_games=50)
     # print(score_IA)
+    # print(time() - start)
 
-
-    ''' play game PvP'''
-    G = Game(nb_tiles=8,
-             GUI=True,
-             GUI_size=800,
-             exploration_depth=1,
-             game_mode='PvIA',
-             start_position='default',
-             IA_mode=IA_mode)
-    G.init_GUI()
-    G.init_game()
-    G.start_playing()
-    G.root.mainloop()
-    print(G.winner)
-    ''' play game PvP'''
+    # ''' play game PvP'''
+    # IA_1 = 'alphabeta'
+    # IA_2 = 'random'
+    # IA_mode = (IA_1, IA_2)
+    # G = Game(nb_tiles=8,
+    #          GUI=True,
+    #          GUI_size=800,
+    #          exploration_depth=2,
+    #          game_mode='PvIA',
+    #          start_position='default',
+    #          IA_mode=IA_mode)
+    # G.init_GUI()
+    # G.init_game()
+    # G.start_playing()
+    # G.root.mainloop()
+    # print(G.winner)
+    # ''' play game PvP'''
