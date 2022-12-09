@@ -3,7 +3,7 @@ from math import inf, sqrt, log
 
 class TreeNode:
     def __init__(self, legal_moves, white_pawns, black_pawns, pawns_to_flip, player, position, val_position,
-                 alpha=-inf, beta=inf, nb_trial=0):
+                 alpha=-inf, beta=inf, nb_trial=0, mcts_score=0):
         self.legal_moves = legal_moves
         self.white_pawns = white_pawns
         self.black_pawns = black_pawns
@@ -14,6 +14,7 @@ class TreeNode:
         self.alpha = alpha
         self.beta = beta
         self.nb_trial = nb_trial
+        self.mcts_score = mcts_score
         self.children_val = []
         self.children = []
         self.parent = None
@@ -48,13 +49,13 @@ class TreeNode:
         if self.nb_trial == 0:  # on n'a jamais exploré ce noeud
             return inf
         else:
-            return self.val_position/self.nb_trial + C * sqrt(log(self.parent.nb_trial)/self.nb_trial)
+            return self.mcts_score/self.nb_trial + C * sqrt(log(self.parent.nb_trial)/self.nb_trial)
 
     def tree_traversal(self, C):
         max_ucb = -inf
         max_i = 0
         for i, tree_child in enumerate(self.children):
-            ucb = self.UCB1(C)
+            ucb = tree_child.UCB1(C)
             if ucb > max_ucb:
                 max_ucb = ucb
                 max_i = i

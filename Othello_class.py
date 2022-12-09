@@ -15,7 +15,7 @@ from Tree_class import *
 
 class Game:
     def __init__(self, nb_tiles=8, GUI=True, GUI_size=800, exploration_depth=5, game_mode='PvP',
-                 start_position='default', IA_mode=('random', 'random')):
+                 start_position='default', IA_mode=('random', 'random'), C=2, mcts_simul=100, mcts_iter=10):
         self.root = None
         self.nb_tiles = nb_tiles
         self.GUI_size = GUI_size
@@ -31,6 +31,9 @@ class Game:
         self.winner = None
         self.start_position = start_position
         self.exploration_depth = exploration_depth
+        self.C = C
+        self.mcts_simul = mcts_simul
+        self.mcts_iter = mcts_iter
         self.val_array = np.loadtxt('pos_value.txt', usecols=range(8))
         self.while_eval = False
         self.turn_pass = 0
@@ -78,6 +81,7 @@ class Game:
                     if self.GUI:
                         self.update_board((row, col), color)
         else:
+            # self.position = self.position.transpose()
             for w_pawn in self.start_position[1]:  # Pions noirs à placer au départ
                 self.white_pawns.append(w_pawn)
                 self.position[w_pawn] = 1
@@ -89,13 +93,28 @@ class Game:
                 if self.GUI:
                     self.update_board(b_pawn, 'black')
             self.player = self.start_position[2]
+            # self.position = self.position.transpose()
 
     def start_playing(self):
         self.compute_legal_moves()
 
-        if self.game_mode == 'IAvIA':
-            self.human_turn = False
-            self.IA_play()
+        if self.check_pass():  # Pas de coup jouable donc on passe le tour
+            # check_pass rechange de joueur et recalcule les coups légaux
+            # si après le coup de l'IA il n'y a pas de coups légaux, l'IA rejoue forcément
+            if self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
+                self.compute_winner()  # self.player = not self.player
+                # self.compute_legal_moves()
+            else:
+                self.IA_play()
+                ##print(self.position.transpose())
+        else:  # si on ne passe pas le tour
+            if self.game_mode == 'IAvIA':
+                self.human_turn = False
+                self.IA_play()
+        # if self.game_mode == 'IAvIA':
+        #
+        #     self.human_turn = False
+        #     self.IA_play()
 
     def gestion_clic(self, evt):
         if not self.is_over:
@@ -414,9 +433,15 @@ class Game:
             # print(self.tree)
 
     def IA_chose_move(self):
+        # init_player = self.player
+        # init_legal_moves = self.legal_moves.copy()
         self.eval_position()
+        # if self.player != init_player:
+        #     self.player = init_player
+        #     self.legal_moves = init_legal_moves
         tree_root = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(), self.black_pawns.copy(),
                              self.pawns_to_flip.copy(), self.player, np.array(self.position), self.val_position)
+
         if self.player:  # le joueur blanc choisit son coup
             if self.IA_mode[0] == 'minmax':  # les blancs jouent en minmax
                 id_best_move = self.MinMax(depth=self.exploration_depth, tree_parent=tree_root)
@@ -427,7 +452,8 @@ class Game:
                 move = self.legal_moves[id_best_move]
                 # print(self.player, move)
             elif self.IA_mode[0] == 'MCTS':
-                pass  # TODO: Coder MCTS
+                id_best_move = self.MCTS(tree_root, C=self.C, n_simul=self.mcts_simul, n_iter=self.mcts_iter)
+                move = self.legal_moves[id_best_move]
             elif self.IA_mode[0] == 'random':
                 move = choice(self.legal_moves)
 
@@ -441,7 +467,8 @@ class Game:
                 move = self.legal_moves[id_best_move]
                 # print(self.player, move)
             elif self.IA_mode[1] == 'MCTS':
-                pass  # TODO: Coder MCTS
+                id_best_move = self.MCTS(tree_root, C=self.C, n_simul=self.mcts_simul, n_iter=self.mcts_iter)
+                move = self.legal_moves[id_best_move]
             elif self.IA_mode[1] == 'random':
                 move = choice(self.legal_moves)
         # print(self.player, move)
@@ -578,42 +605,74 @@ class Game:
         :type tree_parent: TreeNode
         """
         self.while_eval = True
-
+        cpt = 0
         for _ in range(n_iter):
+            # print('iteration :', cpt)
             current_node = tree_root
         # 1 : Tree traversal
             while current_node.children or current_node == tree_root:
                 # is current not a leaf node
                 # or the start node
-                current_node = tree_root.tree_traversal(C)
+                if current_node == tree_root and not current_node.children:
+                    # on est sur le noeud racine mais on n'a pas encore développé les noeuds fils
+                    break
+                current_node = current_node.tree_traversal(C)
         # 2 : Node Expansion
             if current_node.nb_trial != 0:
-                if current_node.legal_moves:
+                if current_node.legal_moves:  # Il y a des coups jouables à partir de la position
                     for move in current_node.legal_moves:
                         self.init_param(current_node)
-                        # print(self.player)
-                        if not self.check_pass():
-                            x, y = move
-                            self.flip_pawns(x, y)
-                            # print(tree_root.player)
-                            # print(self.player)
-                            self.player = not current_node.player
-                            self.compute_legal_moves()
-                        self.eval_position()
+                        x, y = move
+                        self.flip_pawns(x, y)
+                        self.player = not current_node.player
+                        self.compute_legal_moves()
+                        # self.eval_position()
                         tree_child = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(), self.black_pawns.copy(),
                                               self.pawns_to_flip.copy(), self.player, np.array(self.position),
                                               self.val_position)
                         current_node.add_child(tree_child)
-                else:  # pas de coup à jouer
-                    if self.check_pass():
-                        if self.check_end():
-                            pass
-
-                if current_node.children:  # un
                     current_node = current_node.children[0]
+                else:  # Il n'y a pas de coup jouable à partir de la position
+                    if self.check_pass():
+                        if self.check_end():  # Si la partie est finie on ne fait rien
+                            self.is_over = False
+                        else:  # Si la partie n'est pas finie, le noeud suivant est la même position pour l'adversaire
+                            tree_child = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(),
+                                                  self.black_pawns.copy(),
+                                                  self.pawns_to_flip.copy(), self.player, np.array(self.position),
+                                                  self.val_position)
+                            current_node.add_child(tree_child)
+                            current_node = tree_child
         # 3 : Rollout
-
+            l_score = [0, 0]
+            self.init_param(current_node)
+            for k in range(n_iter):  # on va simuler n_iter parties et compter le nombre de victoires
+                start_position = [self.black_pawns.copy(), self.white_pawns.copy(), self.player]
+                # noinspection PyTypeChecker
+                G = Game(nb_tiles=self.nb_tiles, GUI=False, GUI_size=self.GUI_size,
+                         exploration_depth=self.exploration_depth, game_mode=self.game_mode,
+                         start_position=start_position)
+                G.init_game()
+                G.start_playing()
+                if G.winner == 'Blanc':
+                    l_score[1] += 1
+                elif G.winner == 'Noir':
+                    l_score[0] += 1
+                self.init_param(current_node)
+            score = l_score[self.player]  # 1er élément si joueur noir a commencé, 2ème sinon
+            current_node.mcts_score += score/n_iter
+            current_node.nb_trial += 1
         # 4 : Backpropagation
+            while current_node.parent is not None:
+                current_node = current_node.parent
+                current_node.mcts_score += score
+                current_node.nb_trial += 1
+            cpt += 1
+        l_val = [tree_child.mcts_score for tree_child in tree_root.children]
+        self.while_eval = False
+        self.init_param(tree_root)
+        return l_val.index(min(l_val))
+
 
     def eval_position(self):
         # print("position : ", position)

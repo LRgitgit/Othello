@@ -1,5 +1,7 @@
 from Othello_class import *
 from time import time
+import matplotlib.pyplot as plt
+
 
 # G = Game(nb_tiles=8,
 #          GUI=True,
@@ -136,17 +138,21 @@ def load_position(position, player, depth):
     return G
 
 
-def test_IA(IA_mode, depth, nb_games=50):
+def test_IA(IA_mode, depth, nb_games=50, C=2, mcts_simul=100, mcts_iter=10):
     nb_win_white = 0
     nb_games = nb_games
     for k in range(nb_games):
+        # print('game :', k+1)
         G = Game(nb_tiles=8,
                  GUI=False,
                  GUI_size=800,
                  exploration_depth=depth,
                  game_mode='IAvIA',
                  start_position='default',
-                 IA_mode=IA_mode)
+                 IA_mode=IA_mode,
+                 C=C,
+                 mcts_simul=mcts_simul,
+                 mcts_iter=mcts_iter)
         if G.GUI:
             G.init_GUI()
         G.init_game()
@@ -159,14 +165,23 @@ def test_IA(IA_mode, depth, nb_games=50):
 
 
 if __name__ == '__main__':
-    start = time()
-    IA_1 = 'minmax'
-    IA_2 = 'random'
-    IA_mode = (IA_1, IA_2)
-    score_IA = test_IA(IA_mode=IA_mode, depth=2, nb_games=20)
-    print(score_IA)
-    print(time() - start)
+    l_C = [0, 0.25, 0.5, 0.75, 1, 2, 3, 4, 5, 10, 20, 50]
+    l_score = []
+    for C in l_C:
+        print('C = ', C)
+        start = time()
+        IA_1 = 'MCTS'
+        IA_2 = 'random'
+        IA_mode = (IA_1, IA_2)
+        score_IA = test_IA(IA_mode=IA_mode, depth=2, nb_games=20, C=C, mcts_simul=30, mcts_iter=10)
+        l_score.append(score_IA)
+        print(score_IA)
+        print(time() - start)
 
+
+
+    plt.bar(l_C, l_score)
+    plt.show()
     # start = time()
     # IA_1 = 'minmax'
     # IA_2 = 'random'
