@@ -646,7 +646,7 @@ class Game:
         # 3 : Rollout
             l_score = [0, 0]
             self.init_param(current_node)
-            for k in range(n_iter):  # on va simuler n_iter parties et compter le nombre de victoires
+            for k in range(n_simul):  # on va simuler n_iter parties et compter le nombre de victoires
                 start_position = [self.black_pawns.copy(), self.white_pawns.copy(), self.player]
                 # noinspection PyTypeChecker
                 G = Game(nb_tiles=self.nb_tiles, GUI=False, GUI_size=self.GUI_size,

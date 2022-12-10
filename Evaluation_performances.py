@@ -14,14 +14,14 @@ def eval_algo_MM_AB(IA_mode, nb_games=50):
         l_time.append(exec_time / nb_games)
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.tight_layout()
     ax1.bar(l_depth, l_score)
     ax1.set_xlabel('Profondeur')
     ax1.set_ylabel('Taux de victoires')
 
     ax2.bar(l_depth, l_time)
     ax2.set_xlabel('Profondeur')
-    ax2.set_ylabel('Temps de calcul par partie')
+    ax2.set_ylabel('Temps de calcul par partie (s)')
+    fig.tight_layout()
     plt.show()
 
 
@@ -30,7 +30,7 @@ def eval_algo_MCTS(IA_mode, nb_games=50):
     l_C = [1, 2, 3, 4]
     # l_C = [10, 20, 30, 40]
     # 3 listes de C pour faire des plots plus jolis
-    l_nb_simul = [1, 3, 5, 10, 20, 30]
+    l_nb_simul = [1, 3, 5, 10, 20]
     # l_nb_simul = [1]
     l_score = []
     l_time = []
@@ -45,7 +45,7 @@ def eval_algo_MCTS(IA_mode, nb_games=50):
             l_score_C.append(score_IA)
             if C == l_C[0]:
                 # on ne calcule le temps qu'une seule fois car C n'influe pas sur le temps de calcul
-                l_time.append(exec_time)
+                l_time.append(exec_time/nb_games)
         l_score.append(l_score_C)
 
     print(l_score)
@@ -88,5 +88,7 @@ if __name__ == '__main__':
     IA_1 = 'MCTS'
     IA_2 = 'random'
     IA_mode = (IA_1, IA_2)
-    eval_algo_MCTS(IA_mode, nb_games=3)
+    eval_algo_MCTS(IA_mode, nb_games=20)
     # Pour évaluer MCTS
+
+    #started at 02:12
