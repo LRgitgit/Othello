@@ -1,5 +1,9 @@
 from Play_Othello import *
 
+'''
+Les fonctions utilisées pour évaluer les performances des différents paramètres dans les algorithmes de Othello_class.py
+'''
+
 
 def eval_algo_MM_AB(IA_mode, nb_games=50):
     l_depth = [1, 2, 3, 4]

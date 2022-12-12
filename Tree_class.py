@@ -1,5 +1,9 @@
 from math import inf, sqrt, log
 
+'''
+Définition de la classe TreeNode pour générer des arbres utilisés dans les algorithmes de Othello_class.py
+'''
+
 
 class TreeNode:
     def __init__(self, legal_moves, white_pawns, black_pawns, pawns_to_flip, player, position, val_position,

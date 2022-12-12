@@ -2,6 +2,9 @@ from Othello_class import *
 from time import time
 import matplotlib.pyplot as plt
 
+'''
+Quelques fonctions pour lancer des parties d'Othello en PvP, PvIA ou IAvIA à partir de positions fixées
+'''
 
 def get_b_w(position):
     # prendre G.position.transpose()
@@ -63,6 +66,7 @@ def test_IA(IA_mode, depth, GUI=False, nb_games=50, C=2, mcts_simul=100, mcts_it
 
 
 if __name__ == '__main__':
+
     ''' play game PvP'''
     IA_1 = 'alphabeta'
     IA_2 = 'random'

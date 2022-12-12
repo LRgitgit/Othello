@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Nov  2 17:02:16 2022
-
-@author: prje
-"""
 
 import numpy as np
 from tkinter import *
@@ -12,6 +7,10 @@ from math import floor, inf
 from random import choice
 from Tree_class import *
 
+'''
+Définition de la classe Game avec tous les attributs et méthodes pour jouer au jeu d'Othello
+Contient aussi sous forme de méthodes, les algorithmes de résolution MinMax, AlphaBeta et MCTS
+'''
 
 class Game:
     def __init__(self, nb_tiles=8, GUI=True, GUI_size=800, exploration_depth=5, game_mode='PvP',
@@ -81,7 +80,6 @@ class Game:
                     if self.GUI:
                         self.update_board((row, col), color)
         else:
-            # self.position = self.position.transpose()
             for w_pawn in self.start_position[1]:  # Pions noirs à placer au départ
                 self.white_pawns.append(w_pawn)
                 self.position[w_pawn] = 1
@@ -93,7 +91,6 @@ class Game:
                 if self.GUI:
                     self.update_board(b_pawn, 'black')
             self.player = self.start_position[2]
-            # self.position = self.position.transpose()
 
     def start_playing(self):
         self.compute_legal_moves()
@@ -103,18 +100,12 @@ class Game:
             # si après le coup de l'IA il n'y a pas de coups légaux, l'IA rejoue forcément
             if self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
                 self.compute_winner()  # self.player = not self.player
-                # self.compute_legal_moves()
             else:
                 self.IA_play()
-                ##print(self.position.transpose())
         else:  # si on ne passe pas le tour
             if self.game_mode == 'IAvIA':
                 self.human_turn = False
                 self.IA_play()
-        # if self.game_mode == 'IAvIA':
-        #
-        #     self.human_turn = False
-        #     self.IA_play()
 
     def gestion_clic(self, evt):
         if not self.is_over:
@@ -147,7 +138,6 @@ class Game:
                         self.human_turn = True
                         if self.check_end():
                             self.compute_winner()
-                            # print(self.position.transpose())
                 else:
                     print("Illegal Move")
             else:
@@ -166,7 +156,6 @@ class Game:
 
     def check_pass(self):
         if not self.legal_moves:  # le joueur passe si aucun n'est jouable
-            ##print('turn_pass')
             self.player = not self.player  # on change de joueur = on revient au joueur qui vient de jouer
             self.compute_legal_moves()
             return True
@@ -176,7 +165,6 @@ class Game:
         # si les 2 joueurs passent leur tour, la partie est finie
         if not self.legal_moves:  # le joueur passe si aucun n'est jouable
             self.is_over = True
-            ##print('is_over: ', self.is_over)
             return True
         return False
 
@@ -207,10 +195,6 @@ class Game:
         if self.GUI:
             for move in self.legal_moves:
                 self.update_board(move, 'yellow')
-                # if self.player : 
-                #     self.grille.create_oval(move[0]*self.GUI_size/self.nb_tiles + self.GUI_size/3, move[1]*self.GUI_size/self.nb_tiles + self.GUI_size/3 , (move[0]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, (move[1]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, outline = 'white', fill = "white", width = 2)
-                # else : 
-                #     self.grille.create_oval(move[0]*self.GUI_size/self.nb_tiles + self.GUI_size/3, move[1]*self.GUI_size/self.nb_tiles + self.GUI_size/3 , (move[0]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, (move[1]+1)*self.GUI_size/self.nb_tiles - self.GUI_size/3, outline = 'black', fill = "black", width = 2)
 
     def check_legal_neighbours(self, pawn):
 
@@ -247,12 +231,9 @@ class Game:
             # Liste des pions noirs adjacents à la case à check
             pawns_to_check = [pawn for pawn in self.black_pawns if pawn in legal_neighbours]
         else:
-            # print("Pions noirs : ", self.black_pawns, "case : ", case, "Voisins de case : ", case_neighbours)
             # Liste des pions blancs adjacents à la case à check
             pawns_to_check = [pawn for pawn in self.white_pawns if pawn in legal_neighbours]
 
-        # print("legal_neighbours to check : ", legal_neighbours)
-        # print("Pion : ", case, " pawns_to_check : ", pawns_to_check)
         for free_case in legal_neighbours:
             # déterminer le sens du vecteur entre la case à tester et le pion opposé considéré
             case_x = free_case[0]
@@ -262,7 +243,6 @@ class Game:
             delta_x = pawn_x - case_x
             delta_y = pawn_y - case_y
 
-            # print("Pawn to check : ", pawn_to_check, " Free case : ", free_case, "Delta : ", delta_x,",",delta_y)
 
             # Nombre de translations depuis la case, commence à 2 puisque 1 est le pions opposé considéré
             step = 2
@@ -273,7 +253,6 @@ class Game:
             # Tant que la position à checker est dans le champs et que l'arrêt n'est pas déclenché
             while case_x + step * delta_x >= 0 and case_x + step * delta_x <= self.nb_tiles - 1 and case_y + step * delta_y >= 0 and case_y + step * delta_y <= self.nb_tiles - 1:
                 coordinates_to_check = (case_x + step * delta_x, case_y + step * delta_y)
-                # print("coord_to_check ", coordinates_to_check)
                 if self.player:  # Joueur Blanc
                     if coordinates_to_check in self.white_pawns:
                         # Si le pion d'après est blanc : critère d'arret (ou break/continue) et ajout à pawn to flip du premier pion
@@ -300,7 +279,6 @@ class Game:
                         continue
 
                     # Si on arrive ici la case est focément vide
-                    # print("Hors-cadre : ", coordinates_to_check)
                     legal = False
                     break
 
@@ -330,16 +308,13 @@ class Game:
                         continue
 
                     # Si on arrive ici la case est focément vide
-                    # print("Hors-cadre : ", coordinates_to_check)
                     legal = False
                     break
             # Le cas d'une suite de pions d'une même couleur jusqu'à la sortie du cadre ne permet pas de passer legal à False puisqu'on sort du while sans être passé dessus
-            # print("Pawn to check : ", pawn_to_check, " Free case : ", free_case, " local_pawns_to_flip", local_pawns_to_flip)
             # Cette condition permet de ne pas avoir à checker à la checker à chaque tour du while et determine si on est sorti parce que pion blanc ou parce que hors cadre
             # if  case_x + step*delta_x < 0 and case_x + step*delta_x > self.nb_tiles - 1 and case_y + step*delta_y < 0 and case_y + step*delta_y > self.nb_tiles -1 :
             if case_x + step * delta_x < 0 or case_x + step * delta_x > self.nb_tiles - 1 or case_y + step * delta_y < 0 or case_y + step * delta_y > self.nb_tiles - 1:
                 legal = False
-                # print("Legal = False  Free_Case : ", free_case)
             # Sorti du while avec legal toujours True <=> Pas de case vide rencontrées
 
             if legal:
@@ -356,7 +331,6 @@ class Game:
                 else:
                     self.pawns_to_flip.update({free_case: local_pawns_to_flip})
                 # Suivre ce vecteur et l'allonger jusqu'à rencontrer une case blanche/noire/vide/hors cadre
-                # print("self.pawns_to_flip", self.pawns_to_flip, "\n")
 
     def remove_legal_moves_GUI(self, x, y):
         # On enlève le move joué de la liste des coups jouables
@@ -367,12 +341,6 @@ class Game:
                 self.update_board(move, 'green')
 
     def flip_pawns(self, x, y):
-        # print("Joueur : ", ['Noir', 'Blanc'][self.player])  # Affiche Noir si joueur est False (cad ==0) et Blanc sinon
-        # print("Whites : ", self.white_pawns)
-        # print("Blacks : ", self.black_pawns)
-        # print("Coup joué : ", (x, y))
-        # print("Pions à retourner : ", self.pawns_to_flip[(x, y)])
-
         if self.player:
             # On ajoute le pion qui vient d'être placé
             self.white_pawns.append((x, y))
@@ -386,7 +354,6 @@ class Game:
                 # On remplace sa couleur sur la grille
                 if self.GUI:  # La condition permet de ne pas créer d'erreur quand on appelle flip_pawns pour la construction de l'arbre
                     self.update_board(pawn, 'white')
-
         else:
             self.black_pawns.append((x, y))
             self.position[(x, y)] = -1
@@ -398,9 +365,7 @@ class Game:
                     self.update_board(pawn, 'black')
 
     def IA_play(self):
-        # print('IA_play :', self.legal_moves)
         if not self.is_over:
-            # print(self.player)
             move = self.IA_chose_move()  # par défaut l'IA choisit le 1er coup
             if not self.player:  # au tour des noirs
                 color = 'black'
@@ -420,25 +385,16 @@ class Game:
                 # si après le coup de l'IA il n'y a pas de coups légaux, l'IA rejoue forcément
                 if self.check_end():  # Le joueur peut rejouer donc la partie ne s'arrête pas
                     self.compute_winner()  # self.player = not self.player
-                    # self.compute_legal_moves()
                 else:
                     self.IA_play()
-                    ##print(self.position.transpose())
             else:  # si on ne passe pas le tour
                 if self.game_mode == 'IAvIA':
                     self.IA_play()
                 else:  # ceci n'est appelé que si 'PvIA' ou 'IAvIA' donc ce cas est 'PvIA'
                     self.human_turn = True
-            # print(self.position.transpose())
-            # print(self.tree)
 
     def IA_chose_move(self):
-        # init_player = self.player
-        # init_legal_moves = self.legal_moves.copy()
         self.eval_position()
-        # if self.player != init_player:
-        #     self.player = init_player
-        #     self.legal_moves = init_legal_moves
         tree_root = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(), self.black_pawns.copy(),
                              self.pawns_to_flip.copy(), self.player, np.array(self.position), self.val_position)
 
@@ -448,9 +404,7 @@ class Game:
                 move = self.legal_moves[id_best_move]
             elif self.IA_mode[0] == 'alphabeta':
                 id_best_move = self.AlphaBeta(depth=self.exploration_depth, tree_parent=tree_root)
-                # print(id_best_move)
                 move = self.legal_moves[id_best_move]
-                # print(self.player, move)
             elif self.IA_mode[0] == 'MCTS':
                 id_best_move = self.MCTS(tree_root, C=self.C, n_simul=self.mcts_simul, n_iter=self.mcts_iter)
                 move = self.legal_moves[id_best_move]
@@ -463,27 +417,20 @@ class Game:
                 move = self.legal_moves[id_best_move]
             elif self.IA_mode[1] == 'alphabeta':
                 id_best_move = self.AlphaBeta(depth=self.exploration_depth, tree_parent=tree_root)
-                # print(id_best_move)
                 move = self.legal_moves[id_best_move]
-                # print(self.player, move)
             elif self.IA_mode[1] == 'MCTS':
                 id_best_move = self.MCTS(tree_root, C=self.C, n_simul=self.mcts_simul, n_iter=self.mcts_iter)
                 move = self.legal_moves[id_best_move]
             elif self.IA_mode[1] == 'random':
                 move = choice(self.legal_moves)
-        # print(self.player, move)
-        # print(self.player, move)
         return move
 
     def compute_winner(self):
         if self.position.sum() > 0:  # Plus de pions blancs que noirs donc les blancs gagnent
             self.winner = 'Blanc'
-            ##print('Les blancs gagnent')
         elif self.position.sum() < 0:
             self.winner = 'Noir'
-            ##print('Les noirs gagnent')
         else:
-            # print('Draw')
             pass
 
     def init_param(self, tree):
@@ -506,7 +453,7 @@ class Game:
                 self.compute_winner()
                 self.is_over = False  # Pour ne pas arrêter la partie
                 if self.winner == 'Blanc':
-                    return 2000
+                    return 2000  # valeur arbitraire très grande en valeur absolue
                 elif self.winner == 'Noir':
                     return -2000
                 else:
@@ -561,12 +508,9 @@ class Game:
         if depth > 0:
             for move in tree_parent.legal_moves.copy():
                 self.init_param(tree_parent)
-                # print(self.player)
                 if not self.check_pass():
                     x, y = move
                     self.flip_pawns(x, y)
-                    # print(tree_root.player)
-                    # print(self.player)
                     self.player = not tree_parent.player
                     self.compute_legal_moves()
                 self.eval_position()
@@ -588,12 +532,9 @@ class Game:
             if tree_parent.parent is None:
                 self.while_eval = False
                 self.init_param(tree_parent)
-                # print('is over:', self.is_over)
                 if tree_parent.player:  # les blancs commencent
-                    # print(np.argmax(tree_parent.children_val))
                     return np.argmax(tree_parent.children_val)
                 else:
-                    # print(np.argmin(tree_parent.children_val))
                     return np.argmin(tree_parent.children_val)
             elif tree_parent.player:
                 return tree_parent.alpha
@@ -605,9 +546,7 @@ class Game:
         :type tree_parent: TreeNode
         """
         self.while_eval = True
-        cpt = 0
         for _ in range(n_iter):
-            # print('iteration :', cpt)
             current_node = tree_root
         # 1 : Tree traversal
             while current_node.children or current_node == tree_root:
@@ -626,7 +565,6 @@ class Game:
                         self.flip_pawns(x, y)
                         self.player = not current_node.player
                         self.compute_legal_moves()
-                        # self.eval_position()
                         tree_child = TreeNode(self.legal_moves.copy(), self.white_pawns.copy(), self.black_pawns.copy(),
                                               self.pawns_to_flip.copy(), self.player, np.array(self.position),
                                               self.val_position)
@@ -667,7 +605,6 @@ class Game:
                 current_node = current_node.parent
                 current_node.mcts_score += score
                 current_node.nb_trial += 1
-            cpt += 1
         l_val = [tree_child.mcts_score for tree_child in tree_root.children]
         self.while_eval = False
         self.init_param(tree_root)
@@ -675,10 +612,6 @@ class Game:
 
 
     def eval_position(self):
-        # print("position : ", position)
-        # print(self.val_array)
-        # print(self.position.transpose())
-        # print(self.val_array*self.position.transpose())
         if not self.white_pawns:  # il n'y a plus de pions blancs
             self.val_position = -2000  # valeur arbitraire très grande en valeur absolue pour victoire ou défaite
             # si val_position = inf cela cause des problèmes avec le inf du alpha beta à l'initialisation
@@ -695,10 +628,7 @@ class Game:
                 else:
                     self.val_position = 0
             else:
-                # self.player = not self.player  # on retourne au joueur d'avant
                 self.val_position = (self.val_array * self.position).sum()
-            # self.player = not self.player
-            # self.compute_legal_moves()
         else:
             self.val_position = (self.val_array * self.position).sum()
 
